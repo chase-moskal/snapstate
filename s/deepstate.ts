@@ -1,8 +1,8 @@
 
+import {obtain} from "./tools/obtain.js"
 import {objectMap} from "./tools/object-map.js"
 import {plantProperty} from "./tools/plant-property.js"
 import {SnapstateReadonlyError} from "./parts/errors.js"
-import {obtain} from "./tools/obtain.js"
 
 export interface StateTree {
 	[key: string]: StateTree | any

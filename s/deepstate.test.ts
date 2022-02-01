@@ -16,6 +16,10 @@ export default <Suite>{
 			const state = deepstate({group: {a: 0}})
 			expect(() => (<any>state.readable).group.a += 1).throws()
 		},
+		async "state readable groups are readonly"() {
+			const state = deepstate({group: {a: 0}})
+			expect(() => (<any>state.readable).group = {a: 1}).throws()
+		},
 		async "state property is writable"() {
 			const state = deepstate({group: {a: 0}})
 			state.writable.group.a += 1
