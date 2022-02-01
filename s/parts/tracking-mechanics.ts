@@ -11,7 +11,7 @@ export function trackingMechanics() {
 		identifier: symbol
 		session: Session<any, any>
 	}
-	
+
 	const sessions = new Map<string, Map<symbol, Session<any, any>>>()
 
 	function unsubscribe(identifier: symbol) {
