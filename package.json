@@ -15,8 +15,8 @@
 		"clean": "rimraf x && mkdirp x",
 		"compile": "tsc",
 		"watch": "npm run compile -s -- --watch",
-		"test": "cynic node x/snapstate.test.js",
-		"test-debug": "node inspect node_modules/cynic/dist/cli.js node x/snapstate.test.js"
+		"test": "cynic node x/deepstate.test.js",
+		"test-debug": "node inspect node_modules/cynic/dist/cli.js node x/deepstate.test.js"
 	},
 	"keywords": [
 		"state",
