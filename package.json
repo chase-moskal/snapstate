@@ -1,0 +1,43 @@
+{
+	"name": "snapstate",
+	"version": "0.0.0-dev.0",
+	"description": "tiny robust state management",
+	"license": "MIT",
+	"author": "Chase Moskal <chasemoskal@gmail.com>",
+	"type": "module",
+	"main": "x/snapstate.js",
+	"files": [
+		"x",
+		"s"
+	],
+	"scripts": {
+		"build": "run-s clean compile test",
+		"clean": "rimraf x && mkdirp x",
+		"compile": "tsc",
+		"watch": "npm run compile -s -- --watch",
+		"test": "cynic node x/snapstate.test.js",
+		"test-debug": "node inspect node_modules/cynic/dist/cli.js node x/snapstate.test.js"
+	},
+	"keywords": [
+		"state",
+		"state-management"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/chase-moskal/snapstate.git"
+	},
+	"bugs": {
+		"url": "https://github.com/chase-moskal/snapstate/issues"
+	},
+	"homepage": "https://github.com/chase-moskal/snapstate#readme",
+	"devDependencies": {
+		"cynic": "0.1.0-dev.16",
+		"mkdirp": "^1.0.4",
+		"npm-run-all": "^4.1.5",
+		"rimraf": "^3.0.2",
+		"typescript": "^4.5.4"
+	},
+	"dependencies": {
+		"mongodb": "^4.3.1"
+	}
+}
