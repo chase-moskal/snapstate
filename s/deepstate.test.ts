@@ -3,6 +3,7 @@ import {Suite, assert, expect} from "cynic"
 import {deepstate} from "./deepstate.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
+import {obtain} from "./tools/obtain.js"
 
 export default <Suite>{
 	debounce,
@@ -15,11 +16,16 @@ export default <Suite>{
 			const state = deepstate({group: {a: 0}})
 			expect(() => (<any>state.readable).group.a += 1).throws()
 		},
-		// async "state property is writable"() {
-		// 	const state = deepstate({group: {a: 0}})
-		// 	state.writable.group.a += 1
-		// 	expect(state.readable.group.a).equals(1)
-		// },
+		async "state property is writable"() {
+			const state = deepstate({group: {a: 0}})
+			state.writable.group.a += 1
+			expect(state.readable.group.a).equals(1)
+		},
+		async "state group is writable"() {
+			const state = deepstate({group: {a: 0}})
+			state.writable.group = {a: 1}
+			expect(state.readable.group.a).equals(1)
+		},
 		// async "state property is subscribable"() {
 		// 	const state = deepstate({group: {a: 0}})
 		// 	let calls = 0

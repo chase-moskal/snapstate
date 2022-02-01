@@ -2,6 +2,7 @@
 import {objectMap} from "./tools/object-map.js"
 import {plantProperty} from "./tools/plant-property.js"
 import {SnapstateReadonlyError} from "./parts/errors.js"
+import {obtain} from "./tools/obtain.js"
 
 export interface StateTree {
 	[key: string]: StateTree | any
@@ -18,8 +19,18 @@ export type Reaction<X> = (x: X) => void
 
 export function deepstate<xTree extends StateTree>(tree: xTree) {
 
-	const trackers: {[key: string]: any} = {}
-	const pathToTrackId = (path: string[]) => path.join("++")
+	// const trackers: {[key: string]: any} = {}
+	// const pathToTrackId = (path: string[]) => path.join("++")
+
+	function clone(o: StateTree): any {
+		return objectMap(o, (value, key) => {
+			return (typeof value === "object")
+				? clone(value)
+				: value
+		})
+	}
+
+	const masterTree = clone(tree)
 
 	let activeTrackThatIsRecording: {
 		observer: Observer<xTree, any>
@@ -27,39 +38,35 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 	}
 
 	function recurse(o: StateTree, allowWrites: boolean, path: string[]): any {
-		return objectMap(o, (item, key) => {
-			const currentPath = [...path, key]
-			if (typeof item === "object") {
-				const target = recurse(item, allowWrites, currentPath)
-				return new Proxy(target, {
-					get(t: any, property: string) {
-						return t[property]
-					},
-					set(t, property: string, value: any) {
-						if (allowWrites) {
-							
-						}
-						else {
-							throw new SnapstateReadonlyError(
-								`state is read-only here, cannot set ${currentPath.join(".")}`
-							)
-						}
-						return true
-					},
-				})
-			}
-			else {
-				return item
+		return new Proxy({}, {
+			get(t: any, property: string) {
+				const currentPath = [...path, property]
+				const value = obtain(masterTree, currentPath)
+				return typeof value === "object"
+					? recurse(value, allowWrites, currentPath)
+					: value
+			},
+			set(t, property: string, value: any) {
+				const currentPath = [...path, property]
+				if (allowWrites) {
+					plantProperty(masterTree, currentPath, value)
+					return true
+				}
+				else {
+					throw new SnapstateReadonlyError(
+						`state is read-only here, cannot set ${currentPath.join(".")}`
+					)
+				}
 			}
 		})
 	}
 
-	const readable = <Readable<xTree>>recurse(tree, false, [])
 	const writable = <xTree>recurse(tree, true, [])
+	const readable = <Readable<xTree>>recurse(tree, false, [])
 
 	return {
-		readable,
 		writable,
+		readable,
 		subscribe() {},
 		track<X>(observer: Observer<xTree, X>, reaction?: Reaction<X>) {
 			activeTrackThatIsRecording = {observer, reaction}
