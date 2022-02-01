@@ -5,7 +5,9 @@ import {debounce} from "./tools/debounce/debounce.js"
 import {SnapstateReadonlyError} from "./parts/errors.js"
 import {trackingMechanics} from "./parts/tracking-mechanics.js"
 
+export * from "./types.js"
 export * from "./compose-snapstate.js"
+export * from "./tools/debounce/debounce.js"
 
 import type {Observer, Reaction, Readable} from "./types.js"
 
