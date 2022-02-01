@@ -9,6 +9,7 @@
 ⛹️ changes are debounced, avoiding duplicate updates  
 🕵️ track only the properties you are using  
 🛠️ typescript types  
+💖 free and open source, just for you  
 
 snapstate is our mobx replacement. mobx is great, but ridiculously large at like 50 KB. snapstate aims to replace mobx, but it's only a few hundred lines. when you minify and gzip it, it's probably like 1 or 2 KB.
 
@@ -44,12 +45,9 @@ the first cool thing about snapstate, is that is separates the `readable` and `w
   state.writable.count += 1
    //> this is allowed
   ```
-
-this is great, because we can pass `readable` to parts of our application that should not be allowed to change the state.
-
-and, if we'd like to formalize *actions,* we can give those actions access to the `writable` state.
-
-this makes it easy to achieve a uni-directional dataflow for your application's state.
+- this is great, because we can pass `readable` to parts of our application that should not be allowed to change the state.
+- if we'd like to formalize *actions,* we can give those actions access to the `writable` state.
+- this makes it easy to achieve a uni-directional dataflow for our application's state.
 
 ### tracking changes
 
@@ -93,7 +91,7 @@ this makes it easy to achieve a uni-directional dataflow for your application's 
    //> *nothing happens*
   ```
 
-## debouncing and waiting
+### debouncing and waiting
 
 - the updates that respond to changing state, is debounced.  
   because of this, you may have to `wait` before seeing the effects of your update.
@@ -114,6 +112,6 @@ this makes it easy to achieve a uni-directional dataflow for your application's 
    //> true -- oh, okay, i just had to wait for the debouncer!
   ```
 
-## more documentation
+### more documentation
 
 *coming soon, lol*
