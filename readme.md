@@ -1,6 +1,6 @@
 
 # snapstate
 
-`npm install snapstate`
+`npm install @chasemoskal/snapstate`
 
 *tiny robust state management*
