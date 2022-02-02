@@ -2,12 +2,27 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"label": "install project dependencies",
+			"type": "shell",
+			"command": "npm",
+			"problemMatcher": [],
+			"args": ["install"],
+		},
+		{
+			"label": "build the project",
 			"type": "npm",
 			"script": "build",
+			"problemMatcher": "$tsc",
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			}
-		}
+		},
+		{
+			"label": "watch and rebuild code changes",
+			"type": "npm",
+			"script": "watch",
+			"problemMatcher": "$tsc-watch",
+		},
 	]
 }
