@@ -12,7 +12,7 @@
 ♻️ keeps you safe from circular references  
 ⛹️ updates are debounced, avoiding duplicate updates  
 🌳 carve large state trees into substates  
-🎛️ implemented with recursive es proxies  
+🧬 implemented with recursive es proxies  
 🔬 typescript-native types  
 💖 free and open source, just for you  
 
