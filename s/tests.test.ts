@@ -53,6 +53,22 @@ export default <Suite>{
 				state.writable.a += 1
 				expect(state.readable.a).equals(1)
 			},
+			async "state proxies support object spread"() {
+				const state = snapstate({group: {a: 0, b: 0}})
+				const result1 = {...state.readable.group}
+				state.writable.group = {a: 1, b: 1}
+				const result2 = {...state.readable.group}
+				const result3 = {...state.writable.group}
+				expect(Object.keys(result1).length).equals(2)
+				expect(Object.keys(result2).length).equals(2)
+				expect(Object.keys(result3).length).equals(2)
+				expect(result1.a).equals(0)
+				expect(result1.b).equals(0)
+				expect(result2.a).equals(1)
+				expect(result2.b).equals(1)
+				expect(result3.a).equals(1)
+				expect(result3.b).equals(1)
+			},
 		},
 		"subscriptions": {
 			async "state property is subscribable"() {
