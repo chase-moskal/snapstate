@@ -9,7 +9,7 @@
 
 👁️ watch for changes to properties  
 🕵️ track only the properties you are reading, automatically  
-♻️ keeps you safe from circular references  
+♻️ keeps you safe from circular updates  
 ⛹️ updates are debounced, avoiding duplicate updates  
 🌳 carve large state trees into substates  
 🧬 implemented with recursive es proxies  
