@@ -1,7 +1,7 @@
 
 import {clone} from "./tools/clone.js"
 import {obtain} from "./tools/obtain.js"
-import {pathExists} from "./parts/path-exists.js"
+import {containsPathOrChildren, containsPath} from "./parts/paths.js"
 import {debounce} from "./tools/debounce/debounce.js"
 import {plantProperty} from "./tools/plant-property.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
@@ -22,7 +22,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree) {
 	function findTrackingSessions(path: string[]): TrackingSession[] {
 		const sessions: TrackingSession[] = []
 		for (const [,session] of trackingSessions) {
-			if (pathExists(session.paths, path))
+			if (containsPathOrChildren(session.paths, path))
 				sessions.push(session)
 		}
 		return sessions
@@ -57,7 +57,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree) {
 	})
 	let waiter: Promise<void> = Promise.resolve()
 	function queueUpdate(path: string[]) {
-		if (!pathExists(updateQueue, path))
+		if (!containsPath(updateQueue, path))
 			updateQueue.push(path)
 		waiter = update()
 	}
@@ -69,7 +69,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree) {
 
 				// record which properties are read during tracking
 				if (activeTrackThatIsRecording) {
-					if (!pathExists(activeTrackThatIsRecording.paths, currentPath)) {
+					if (!containsPath(activeTrackThatIsRecording.paths, currentPath)) {
 						activeTrackThatIsRecording.paths.push(currentPath)
 					}
 				}
