@@ -14,6 +14,7 @@ export type Reaction<X> = (x: X) => void
 
 export interface TrackingSession {
 	paths: string[][]
+	flip: boolean
 	observer: Observer<any, any>
 	reaction?: Reaction<any>
 }
@@ -24,7 +25,7 @@ export interface Snapstate<xTree extends StateTree> {
 	writable: xTree
 	readable: Readable<xTree>
 	subscribe(subscription: Subscription<xTree>): () => void
-	track<X>(observer: Observer<xTree, X>, reaction?: Reaction<X>): () => void
+	track<X>(observer: Observer<xTree, X>, reaction?: Reaction<X>, options?: {flip?: boolean}): () => void
 	unsubscribeAll(): void
 	untrackAll(): void
 	wait(): Promise<void>

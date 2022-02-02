@@ -3,7 +3,7 @@ import {clone} from "./tools/clone.js"
 import {obtain} from "./tools/obtain.js"
 import {debounce} from "./tools/debounce/debounce.js"
 import {forceNestedProperty} from "./tools/force-nested-property.js"
-import {containsPathOrChildren, containsPath} from "./parts/paths.js"
+import {containsPathOrChildren, containsPath, containsPathOrParents} from "./parts/paths.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
 
 import type {StateTree, Readable, Subscription, TrackingSession, Snapstate} from "./types.js"
@@ -25,8 +25,14 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 	function findTrackingSessions(path: string[]): TrackingSession[] {
 		const sessions: TrackingSession[] = []
 		for (const [,session] of trackingSessions) {
-			if (containsPathOrChildren(session.paths, path))
-				sessions.push(session)
+			if (session.flip) {
+				if (containsPathOrParents(session.paths, path))
+					sessions.push(session)
+			}
+			else {
+				if (containsPathOrChildren(session.paths, path))
+					sessions.push(session)
+			}
 		}
 		return sessions
 	}
@@ -44,7 +50,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 				for (const subscription of subscriptions) {
 					subscription(readable)
 				}
-	
+
 				// trigger reactions
 				for (const {observer, reaction} of findTrackingSessions(path)) {
 					if (reaction)
@@ -113,9 +119,9 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 			unsubscribers.add(unsubscribe)
 			return unsubscribe
 		},
-		track(observer, reaction) {
+		track(observer, reaction, {flip = false} = {}) {
 			const identifier = Symbol()
-			activeTrackThatIsRecording = {observer, reaction, paths: []}
+			activeTrackThatIsRecording = {paths: [], flip, observer, reaction}
 			trackingSessions.set(identifier, activeTrackThatIsRecording)
 			observer(readable)
 			activeTrackThatIsRecording = undefined
@@ -151,7 +157,17 @@ export function substate<xTree extends StateTree, xSubtree extends StateTree>(
 		writable,
 		readable,
 		subscribe(subscription) {
-			const unsubscribe = state.subscribe(() => subscription(readable))
+			// substate subscription actually uses a flipped track,
+			// which allows us to receive updates for any property
+			// *below* properties accessed by the grabber,
+			// which is functionally equivalent to a constrained subscription.
+			const unsubscribe = state.track(
+				() => grabber(<xTree>state.readable),
+				readable => {
+					subscription(readable)
+				},
+				{flip: true},
+			)
 			unsubscribers.add(unsubscribe)
 			return unsubscribe
 		},

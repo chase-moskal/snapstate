@@ -262,17 +262,19 @@ export default <Suite>{
 				expect(aCalls).equals(3)
 			},
 		},
-		"subsectioning": {
-			async "subsection reading and writing works"() {
+		"subsectioning states with substate": {
+			async "substate reading and writing works"() {
 				const state = snapstate({group: {a: 0}})
 				const group = substate(state, readable => readable.group)
 				expect(group.readable.a).equals(0)
 				group.writable.a += 1
 				expect(group.readable.a).equals(1)
 			},
-			async "subsection subscription works"() {
+			async "substate subscription works"() {
 				const state = snapstate({group: {a: 0}})
-				const group = substate(state, readable => readable.group)
+				const group = substate(state, readable => {
+					return readable.group
+				})
 				expect(group.readable.a).equals(0)
 				let calls = 0
 				group.subscribe(() => calls += 1)
@@ -282,7 +284,7 @@ export default <Suite>{
 				await group.wait()
 				expect(calls).equals(1)
 			},
-			async "subsection subscription interacts with root state"() {
+			async "substate subscription interacts with root state"() {
 				const state = snapstate({group: {a: 0}})
 				const group = substate(state, readable => readable.group)
 				expect(group.readable.a).equals(0)
@@ -301,7 +303,7 @@ export default <Suite>{
 				expect(rootCalls).equals(2)
 				expect(subCalls).equals(2)
 			},
-			async "subsection tracking works"() {
+			async "substate tracking works"() {
 				const state = snapstate({group: {a: 0}})
 				const group = substate(state, readable => readable.group)
 				expect(group.readable.a).equals(0)
@@ -316,7 +318,7 @@ export default <Suite>{
 				await group.wait()
 				expect(calls).equals(2)
 			},
-			async "subsection tracking interacts with root"() {
+			async "substate tracking interacts with root"() {
 				const state = snapstate({group: {a: 0}})
 				const group = substate(state, readable => readable.group)
 				expect(group.readable.a).equals(0)
@@ -342,6 +344,18 @@ export default <Suite>{
 				await state.wait()
 				expect(rootCalls).equals(3)
 				expect(subCalls).equals(3)
+			},
+			async "substate subscription only fires for relevant updates"() {
+				const state = snapstate({a: 0, group: {b: 0}})
+				const group = substate(state, readable => readable.group)
+				let calls = 0
+				group.subscribe(() => calls += 1)
+				state.writable.a += 1
+				await state.wait()
+				expect(calls).equals(0)
+				state.writable.group.b += 1
+				await state.wait()
+				expect(calls).equals(1)
 			},
 		},
 		"nesting changes": {

@@ -10,7 +10,8 @@
 		"allowSyntheticDefaultImports": true,
 		"noImplicitAny": true,
 		"sourceMap": true,
-		"declaration": true
+		"declaration": true,
+		"removeComments": true
 	},
 	"include": [
 		"s/**/*"
