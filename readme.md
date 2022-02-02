@@ -74,12 +74,14 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
   state.track(() => {
     console.log(`count changed: ${state.readable.count}`)
       //                                         ☝️
-      //              (snapstate detects this property read)
+      //               snapstate detects this property read,
+      //               and will run this tracker function
+      //               whenever the property changes.
   })
    // 0 -- runs once initially
 
   state.writable.count += 1
-   // 1
+   // 1 -- automatically runs the relevant tracker functions
 
   state.writable.coolmode = "disabled"
    // ~ nothing happens ~

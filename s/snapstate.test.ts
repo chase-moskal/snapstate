@@ -88,6 +88,25 @@ export default <Suite>{
 				await state.wait()
 				expect(calls).equals(2)
 			},
+			async "any relevant property change fires the tracker"() {
+				const state = snapstate({a: 0, b: 0, c: 0})
+				let calls = 0
+				state.track(readable => {
+					void readable.a
+					void readable.b
+					void readable.c
+					calls += 1
+				})
+				state.writable.a += 1
+				await state.wait()
+				expect(calls).equals(2)
+				state.writable.b += 1
+				await state.wait()
+				expect(calls).equals(3)
+				state.writable.c += 1
+				await state.wait()
+				expect(calls).equals(4)
+			},
 			async "only the relevant properties are tracked"() {
 				const state = snapstate({group: {a: 0, b: 0}})
 				let aCalls = 0
