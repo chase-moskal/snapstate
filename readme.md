@@ -5,7 +5,7 @@
 
 *tiny robust state management*
 
-`npm install @chasemoskal/snapstate`
+📦 **`npm install @chasemoskal/snapstate`**
 
 👁️ watch for changes to properties  
 🕵️ track only the properties you are reading, automatically  
@@ -13,10 +13,10 @@
 ⛹️ updates are debounced, avoiding duplicate updates  
 🌳 carve large state trees into substates  
 🧬 implemented with recursive es proxies  
-🔬 typescript-native types  
+🔬 typescript-native types, es modules  
 💖 free and open source, just for you  
 
-snapstate is our mobx replacement. mobx is great, but ridiculously large at like 50 KB. not even sure how they achieved that. snapstate aims to replace mobx, but it's only a few hundred lines. when you minify and gzip it, it's probably like 1 or 2 KB.
+snapstate is designed to be a modern replacement for mobx. mobx was amazing, but has grown comically large at like 50 KB. snapstate is only a few hundred lines. mobx is also *global,* among other complications that we don't prefer.
 
 <br/>
 
