@@ -189,12 +189,31 @@ export default <Suite>{
 				const group = substate(state, readable => readable.group)
 				expect(group.readable.a).equals(0)
 				let calls = 0
-				group.subscribe(readable => calls += 1)
+				group.subscribe(() => calls += 1)
 				expect(calls).equals(0)
 				group.writable.a += 1
 				expect(group.readable.a).equals(1)
 				await group.wait()
 				expect(calls).equals(1)
+			},
+			async "subsection subscription interacts with root state"() {
+				const state = deepstate({group: {a: 0}})
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
+				let rootCalls = 0
+				let subCalls = 0
+				state.subscribe(() => rootCalls += 1)
+				group.subscribe(() => subCalls += 1)
+				expect(rootCalls).equals(0)
+				expect(subCalls).equals(0)
+				group.writable.a += 1
+				await state.wait()
+				expect(rootCalls).equals(1)
+				expect(subCalls).equals(1)
+				state.writable.group.a += 1
+				await state.wait()
+				expect(rootCalls).equals(2)
+				expect(subCalls).equals(2)
 			},
 			async "subsection tracking works"() {
 				const state = deepstate({group: {a: 0}})
@@ -210,6 +229,33 @@ export default <Suite>{
 				expect(group.readable.a).equals(1)
 				await group.wait()
 				expect(calls).equals(2)
+			},
+			async "subsection tracking interacts with root"() {
+				const state = deepstate({group: {a: 0}})
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
+				let rootCalls = 0
+				let subCalls = 0
+				state.track(readable => {
+					void readable.group.a
+					rootCalls += 1
+				})
+				group.track(readable => {
+					void readable.a
+					subCalls += 1
+				})
+				expect(rootCalls).equals(1)
+				expect(subCalls).equals(1)
+
+				group.writable.a += 1
+				await state.wait()
+				expect(rootCalls).equals(2)
+				expect(subCalls).equals(2)
+
+				state.writable.group.a += 1
+				await state.wait()
+				expect(rootCalls).equals(3)
+				expect(subCalls).equals(3)
 			},
 		},
 	},
