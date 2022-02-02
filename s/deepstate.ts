@@ -3,6 +3,7 @@ import {obtain} from "./tools/obtain.js"
 import {objectMap} from "./tools/object-map.js"
 import {plantProperty} from "./tools/plant-property.js"
 import {SnapstateReadonlyError} from "./parts/errors.js"
+import {debounce} from "./snapstate.js"
 
 export interface StateTree {
 	[key: string]: StateTree | any
@@ -69,6 +70,31 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 	const writable = <xTree>recurse(true, [])
 	const readable = <Readable<xTree>>recurse(false, [])
 
+	let updateQueue: string[][] = []
+	const update = debounce(0, () => {
+		for (const path of updateQueue) {
+
+			// trigger subscriptions
+			for (const subscription of subscriptions) {
+				subscription(readable)
+			}
+
+			// trigger reactions
+			for (const {observer, reaction} of findTrackingSessions(path)) {
+				if (reaction)
+					reaction(observer(readable))
+				else
+					observer(readable)
+			}
+		}
+	})
+	let waiter: Promise<void> = Promise.resolve()
+	function queueUpdate(path: string[]) {
+		if (!pathExists(updateQueue, path))
+			updateQueue.push(path)
+		waiter = update()
+	}
+
 	function recurse(allowWrites: boolean, path: string[]): any {
 		return new Proxy({}, {
 			get(t: any, property: string) {
@@ -90,20 +116,7 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 				const currentPath = [...path, property]
 				if (allowWrites) {
 					plantProperty(masterTree, currentPath, value)
-
-					// trigger subscriptions
-					for (const subscription of subscriptions) {
-						subscription(readable)
-					}
-
-					// trigger reactions
-					for (const {observer, reaction} of findTrackingSessions(currentPath)) {
-						if (reaction)
-							reaction(observer(readable))
-						else
-							observer(readable)
-					}
-
+					queueUpdate(currentPath)
 					return true
 				}
 				else {
@@ -129,6 +142,9 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 			observer(readable)
 			activeTrackThatIsRecording = undefined
 			return () => trackingSessions.delete(identifier)
+		},
+		async wait() {
+			await waiter
 		},
 	}
 }

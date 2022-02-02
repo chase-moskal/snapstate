@@ -37,6 +37,7 @@ export default <Suite>{
 				let calls = 0
 				state.subscribe(readable => calls += 1)
 				state.writable.group.a += 1
+				await state.wait()
 				expect(calls).equals(1)
 			},
 			async "subscription can be unsubscribed"() {
@@ -44,9 +45,11 @@ export default <Suite>{
 				let calls = 0
 				const unsubscribe = state.subscribe(readable => calls += 1)
 				state.writable.group.a += 1
+				await state.wait()
 				expect(calls).equals(1)
 				unsubscribe()
 				state.writable.group.a += 1
+				await state.wait()
 				expect(calls).equals(1)
 			},
 		},
@@ -59,6 +62,7 @@ export default <Suite>{
 					calls += 1
 				})
 				state.writable.group.a += 1
+				await state.wait()
 				expect(calls).equals(2)
 			},
 			async "track can be untracked"() {
@@ -69,9 +73,11 @@ export default <Suite>{
 					calls += 1
 				})
 				state.writable.group.a += 1
+				await state.wait()
 				expect(calls).equals(2)
 				untrack()
 				state.writable.group.a += 1
+				await state.wait()
 				expect(calls).equals(2)
 			},
 			async "state property track reaction to avoid initial call"() {
@@ -82,6 +88,7 @@ export default <Suite>{
 					() => calls += 1,
 				)
 				state.writable.group.a += 1
+				await state.wait()
 				expect(calls).equals(1)
 			},
 			async "state group can be tracked"() {
@@ -92,6 +99,7 @@ export default <Suite>{
 					calls += 1
 				})
 				state.writable.group = {a: 999}
+				await state.wait()
 				expect(calls).equals(2)
 			},
 			async "state group triggers trackers for properties"() {
@@ -102,8 +110,24 @@ export default <Suite>{
 					calls += 1
 				})
 				state.writable.group = {a: 999}
+				await state.wait()
 				expect(calls).equals(2)
 			},
+		},
+	},
+	"debouncing updates": {
+		async "multiple updates are debounced"() {
+			const state = deepstate({group: {a: 0}})
+			let calls = 0
+			state.track(readable => {
+				void readable.group.a
+				calls += 1
+			})
+			state.writable.group.a += 1
+			state.writable.group.a += 1
+			state.writable.group.a += 1
+			await state.wait()
+			expect(calls).equals(2)
 		},
 	},
 }
