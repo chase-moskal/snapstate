@@ -263,6 +263,17 @@ snapstate is designed to be a modern replacement for mobx. mobx was amazing, but
 
 <br/>
 
+### 👨‍⚖️ strict readonly
+
+- introducing `state.readonly`. it's `readable`'s strict and demanding mother-in-law.
+- you see, typescript is *extremely strict* about its `readonly` properties.
+- so much so, that it's very painful to use `readonly` structures throughout your app.
+- for this reason, snapstate provides `state.readable` by default, which will throw errors at runtime if you're being naughty and attempting to write properties there -- but the typescript compiler doesn't complain.
+- if your shirt is tucked-in, `state.readonly` will produce compile-time typescript errors for you.
+- anywhere you find a `readable`, you could set its type to `Read<typeof readable>` to make typescript strict about it.
+
+<br/>
+
 ### 📜 beware of arrays, maps, and other fancy objects
 
 - snapstate only tracks when properties are written.
