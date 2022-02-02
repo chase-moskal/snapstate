@@ -48,11 +48,14 @@ export interface TrackingSession {
 	reaction?: Reaction<any>
 }
 
+export type Subscription<xTree extends StateTree> = (readable: Readable<xTree>) => void
+
 export function deepstate<xTree extends StateTree>(tree: xTree) {
 	const masterTree = clone(tree)
 
 	let activeTrackThatIsRecording: TrackingSession
 	const trackingSessions = new Map<symbol, TrackingSession>()
+	const subscriptions = new Set<Subscription<xTree>>()
 
 	function findTrackingSessions(path: string[]): TrackingSession[] {
 		const sessions: TrackingSession[] = []
@@ -88,6 +91,11 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 				if (allowWrites) {
 					plantProperty(masterTree, currentPath, value)
 
+					// trigger subscriptions
+					for (const subscription of subscriptions) {
+						subscription(readable)
+					}
+
 					// trigger reactions
 					for (const {observer, reaction} of findTrackingSessions(currentPath)) {
 						if (reaction)
@@ -110,7 +118,10 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 	return {
 		writable,
 		readable,
-		subscribe() {},
+		subscribe(subscription: Subscription<xTree>) {
+			subscriptions.add(subscription)
+			return () => subscriptions.delete(subscription)
+		},
 		track<X>(observer: Observer<xTree, X>, reaction?: Reaction<X>) {
 			const identifier = Symbol()
 			activeTrackThatIsRecording = {observer, reaction, paths: []}
