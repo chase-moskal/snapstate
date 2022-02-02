@@ -270,6 +270,14 @@ export default <Suite>{
 				group.writable.a += 1
 				expect(group.readable.a).equals(1)
 			},
+			async "substate of substate reading and writing works"() {
+				const state = snapstate({group: {group2: {a: 0}}})
+				const group = substate(state, readable => readable.group)
+				const group2 = substate(group, readable => readable.group2)
+				expect(group2.readable.a).equals(0)
+				group2.writable.a += 1
+				expect(group2.readable.a).equals(1)
+			},
 			async "substate subscription works"() {
 				const state = snapstate({group: {a: 0}})
 				const group = substate(state, readable => {
