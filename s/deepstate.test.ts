@@ -34,6 +34,12 @@ export default <Suite>{
 				state.writable.group = {a: 1}
 				expect(state.readable.group.a).equals(1)
 			},
+			async "read and write from state root"() {
+				const state = deepstate({a: 0, b: 0})
+				expect(state.readable.a).equals(0)
+				state.writable.a += 1
+				expect(state.readable.a).equals(1)
+			},
 		},
 		"subscriptions": {
 			async "state property is subscribable"() {
