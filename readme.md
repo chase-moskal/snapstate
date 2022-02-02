@@ -107,7 +107,7 @@ snapstate is designed to be a modern replacement for mobx. mobx was amazing, but
   )
 
   state.writable.count += 1
-   //> 1
+   // 1
   ```
 - we can also stop tracking things when we want.
   ```js
@@ -115,11 +115,11 @@ snapstate is designed to be a modern replacement for mobx. mobx was amazing, but
   const untrack = state.track(() => console.log(count))
 
   state.writable.count += 1
-   //> 1
+   // 1
 
   untrack()
   state.writable.count += 1
-   //> *nothing happens*
+   // *nothing happens*
   ```
 
 <br/>
@@ -191,11 +191,11 @@ snapstate is designed to be a modern replacement for mobx. mobx was amazing, but
 
   state.writable.count += 1
   console.log(called)
-   //> false -- what the heck!?
+   // false -- what the heck!?
 
   await state.wait()
   console.log(called)
-   //> true -- oh, okay -- i just had to wait for the debouncer!
+   // true -- oh, okay -- i just had to wait for the debouncer!
   ```
 
 <br/>
