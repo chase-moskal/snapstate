@@ -1,17 +1,20 @@
 
 import {clone} from "./tools/clone.js"
 import {obtain} from "./tools/obtain.js"
-import {containsPathOrChildren, containsPath} from "./parts/paths.js"
 import {debounce} from "./tools/debounce/debounce.js"
 import {plantProperty} from "./tools/plant-property.js"
+import {containsPathOrChildren, containsPath} from "./parts/paths.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
 
-import type {StateTree, Observer, Reaction, Readable, Subscription, TrackingSession} from "./types.js"
+import type {StateTree, Readable, Subscription, TrackingSession, Snapstate} from "./types.js"
 
 export * from "./types.js"
 export * from "./parts/errors.js"
+export * from "./tools/obtain.js"
+export * from "./tools/plant-property.js"
+export * from "./tools/debounce/debounce.js"
 
-export function snapstate<xTree extends StateTree>(tree: xTree) {
+export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree> {
 	const masterTree = clone(tree)
 
 	let activeUpdate = false
@@ -97,20 +100,37 @@ export function snapstate<xTree extends StateTree>(tree: xTree) {
 		})
 	}
 
+	const untrackers = new Set<() => void>()
+	const unsubscribers = new Set<() => void>()
+
 	return {
 		writable,
 		readable,
-		subscribe(subscription: Subscription<xTree>) {
+		subscribe(subscription) {
 			subscriptions.add(subscription)
-			return () => subscriptions.delete(subscription)
+			const unsubscribe = () => subscriptions.delete(subscription)
+			unsubscribers.add(unsubscribe)
+			return unsubscribe
 		},
-		track<X>(observer: Observer<xTree, X>, reaction?: Reaction<X>) {
+		track(observer, reaction) {
 			const identifier = Symbol()
 			activeTrackThatIsRecording = {observer, reaction, paths: []}
 			trackingSessions.set(identifier, activeTrackThatIsRecording)
 			observer(readable)
 			activeTrackThatIsRecording = undefined
-			return () => trackingSessions.delete(identifier)
+			const untrack = () => trackingSessions.delete(identifier)
+			untrackers.add(untrack)
+			return untrack
+		},
+		unsubscribeAll() {
+			for (const unsubscribe of unsubscribers)
+				unsubscribe()
+			unsubscribers.clear()
+		},
+		untrackAll() {
+			for (const untrack of untrackers)
+				untrack()
+			untrackers.clear()
 		},
 		async wait() {
 			await waiter
@@ -118,20 +138,36 @@ export function snapstate<xTree extends StateTree>(tree: xTree) {
 	}
 }
 
-export function substate<xState extends ReturnType<typeof snapstate>, xTree>(
-		state: xState,
-		grabber: (tree: xState["writable"]) => xTree
-	) {
+export function substate<xTree extends StateTree, xSubtree extends StateTree>(
+		state: Snapstate<xTree>,
+		grabber: (tree: xTree) => xSubtree,
+	): Snapstate<xSubtree> {
 	const writable = grabber(state.writable)
-	const readable = grabber(state.readable)
+	const readable = grabber(<xTree>state.readable)
+	const untrackers = new Set<() => void>()
+	const unsubscribers = new Set<() => void>()
 	return {
 		writable,
 		readable,
-		subscribe(subscription: Subscription<xTree>) {
-			return state.subscribe(() => subscription(readable))
+		subscribe(subscription) {
+			const unsubscribe = state.subscribe(() => subscription(readable))
+			unsubscribers.add(unsubscribe)
+			return unsubscribe
 		},
-		track<X>(observer: Observer<xTree, X>, reaction?: Reaction<X>) {
-			return state.track<X>(() => observer(readable), reaction)
+		track(observer, reaction) {
+			const untrack = state.track(() => observer(readable), reaction)
+			untrackers.add(untrack)
+			return untrack
+		},
+		unsubscribeAll() {
+			for (const unsubscribe of unsubscribers)
+				unsubscribe()
+			unsubscribers.clear()
+		},
+		untrackAll() {
+			for (const untrack of untrackers)
+				untrack()
+			untrackers.clear()
 		},
 		wait: state.wait,
 	}

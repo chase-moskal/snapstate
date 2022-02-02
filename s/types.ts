@@ -19,3 +19,13 @@ export interface TrackingSession {
 }
 
 export type Subscription<xTree extends StateTree> = (readable: Readable<xTree>) => void
+
+export interface Snapstate<xTree extends StateTree> {
+	writable: xTree
+	readable: Readable<xTree>
+	subscribe(subscription: Subscription<xTree>): () => void
+	track<X>(observer: Observer<xTree, X>, reaction?: Reaction<X>): () => void
+	unsubscribeAll(): void
+	untrackAll(): void
+	wait(): Promise<void>
+}
