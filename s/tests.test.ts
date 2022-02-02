@@ -69,6 +69,18 @@ export default <Suite>{
 				expect(result3.a).equals(1)
 				expect(result3.b).equals(1)
 			},
+			async "arrays, maps, sets, and other objects, are preserved"() {
+				const state = snapstate({
+					array: [1, 2, 3],
+					map: new Map(),
+					set: new Set(),
+				})
+				expect(Array.isArray(state.readable.array)).ok()
+				expect(state.readable.map instanceof Map).ok()
+				expect(state.readable.set instanceof Set).ok()
+				expect(state.readable.array.length).equals(3)
+				expect(state.readable.array[0]).equals(1)
+			},
 		},
 		"subscriptions": {
 			async "state property is subscribable"() {

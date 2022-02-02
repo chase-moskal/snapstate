@@ -2,6 +2,7 @@
 import {clone} from "./tools/clone.js"
 import {obtain} from "./tools/obtain.js"
 import {debounce} from "./tools/debounce/debounce.js"
+import {isPlainObject} from "./tools/is-plain-object.js"
 import {forceNestedProperty} from "./tools/force-nested-property.js"
 import {containsPathOrChildren, containsPath, containsPathOrParents} from "./parts/paths.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
@@ -86,7 +87,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 				}
 
 				const value = obtain(masterTree, currentPath)
-				return typeof value === "object"
+				return isPlainObject(value)
 					? recurse(value, allowWrites, currentPath)
 					: value
 			},
