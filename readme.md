@@ -55,6 +55,7 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
     state.writable.count += 1
   }
   ```
+- then we might give our frontend components the `state.readable`, and `state.track` functions.
 - this makes it easy to achieve a clean uni-directional dataflow for our application's state.
 - `writable` is, itself, also readable.
   ```js
@@ -123,6 +124,7 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
 - we can track changes to properties, or groups.
   ```js
   deepstate.track(readable => console.log(readable.group1.group2.hello))
+  deepstate.track(readable => console.log(readable.group1))
   ```
 
 <br/>
@@ -141,6 +143,19 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
     console.log("something has changed")
   })
   unsubscribe()
+  ```
+
+<br/>
+
+### ✋ untrack and unsubscribe all
+
+- stop all tracking
+  ```js
+  state.untrackAll()
+  ```
+- stop all subscribers
+  ```js
+  state.unsubscribeAll()
   ```
 
 <br/>

@@ -167,6 +167,29 @@ export default <Suite>{
 				expect(calls).equals(2)
 			},
 		},
+		"untrack and unsubscribe all": {
+			async "untrack all stops tracking"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				state.track(readable => {
+					void readable.group.a
+					calls += 1
+				})
+				state.untrackAll()
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(1)
+			},
+			async "unsubscribe all stops subscriptions"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				state.subscribe(() => calls += 1)
+				state.unsubscribeAll()
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(0)
+			},
+		},
 		"forbid circularities": {
 			async "prevent circular subscription"() {
 				const state = snapstate({a: 0})
