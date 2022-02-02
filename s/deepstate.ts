@@ -149,3 +149,22 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 		},
 	}
 }
+
+export function subsection<xState extends ReturnType<typeof deepstate>, xTree>(
+		state: xState,
+		grabber: (tree: xState["writable"]) => xTree
+	) {
+	const writable = grabber(state.writable)
+	const readable = grabber(state.readable)
+	return {
+		writable,
+		readable,
+		subscribe(subscription: Subscription<xTree>) {
+			return state.subscribe(() => subscription(readable))
+		},
+		track<X>(observer: Observer<xTree, X>, reaction?: Reaction<X>) {
+			return state.track<X>(() => observer(readable), reaction)
+		},
+		wait: state.wait,
+	}
+}

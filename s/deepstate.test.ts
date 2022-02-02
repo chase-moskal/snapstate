@@ -1,9 +1,8 @@
 
 import {Suite, expect} from "cynic"
-import {deepstate} from "./deepstate.js"
+import {deepstate, subsection} from "./deepstate.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
-import {nap} from "./tools/nap.js"
 
 export default <Suite>{
 	debounce,
@@ -170,12 +169,47 @@ export default <Suite>{
 		
 				state.writable.group.a += 1
 				await state.wait()
-				await nap(100)
 				expect(aCalls).equals(2)
 		
 				state.writable.group.a += 1
 				await state.wait()
 				expect(aCalls).equals(3)
+			},
+		},
+		"subsectioning": {
+			async "subsection reading and writing works"() {
+				const state = deepstate({group: {a: 0}})
+				const substate = subsection(state, readable => readable.group)
+				expect(substate.readable.a).equals(0)
+				substate.writable.a += 1
+				expect(substate.readable.a).equals(1)
+			},
+			async "subsection subscription works"() {
+				const state = deepstate({group: {a: 0}})
+				const substate = subsection(state, readable => readable.group)
+				expect(substate.readable.a).equals(0)
+				let calls = 0
+				substate.subscribe(readable => calls += 1)
+				expect(calls).equals(0)
+				substate.writable.a += 1
+				expect(substate.readable.a).equals(1)
+				await substate.wait()
+				expect(calls).equals(1)
+			},
+			async "subsection tracking works"() {
+				const state = deepstate({group: {a: 0}})
+				const substate = subsection(state, readable => readable.group)
+				expect(substate.readable.a).equals(0)
+				let calls = 0
+				substate.track(readable => {
+					void readable.a
+					calls += 1
+				})
+				expect(calls).equals(1)
+				substate.writable.a += 1
+				expect(substate.readable.a).equals(1)
+				await substate.wait()
+				expect(calls).equals(2)
 			},
 		},
 	},
