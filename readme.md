@@ -67,10 +67,12 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
 
 ### 🕵️ tracking changes
 
-- we can track changes to the properties we care about. *(analogous to mobx's autorun)*
+- we can track changes to the properties we care about.
   ```js
   state.track(() => {
     console.log(`count changed: ${state.readable.count}`)
+      //                                         ☝️
+      //              (snapstate detects this property read)
   })
    // 0 -- runs once initially
 
@@ -81,7 +83,7 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
    // ~ nothing happens ~
    // our track callback doesn't care about this property
   ```
-- we can be more pedantic, to avoid the initial run.
+- we can be more pedantic, with a custom tracker, to avoid the initial run.
   ```js
   state.track(
 
