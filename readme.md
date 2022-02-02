@@ -44,7 +44,7 @@ snapstate is designed to be a modern replacement for mobx. mobx was amazing, but
 - but, importantly, `readable` won't let us write properties.
   ```js
   state.readable.count += 1
-   // ERROR! no way, bucko!
+   // SnapstateReadonlyError -- no way, bucko!
   ```
 - instead, we write properties via `writable`.
   ```js
