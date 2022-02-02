@@ -145,38 +145,38 @@ export default <Suite>{
 				expect(calls).equals(2)
 			},
 		},
-	},
-	"debouncing updates": {
-		async "multiple updates are debounced"() {
-			const state = deepstate({group: {a: 0}})
-			let calls = 0
-			state.track(readable => {
-				void readable.group.a
-				calls += 1
-			})
-			state.writable.group.a += 1
-			state.writable.group.a += 1
-			state.writable.group.a += 1
-			await state.wait()
-			expect(calls).equals(2)
-		},
-		async "two waits in sequence work"() {
-			const state = deepstate({group: {a: 0, b: 0}})
-			let aCalls = 0
-			state.track(readable => {
-				void readable.group.a
-				aCalls += 1
-			})
-			expect(aCalls).equals(1)
-	
-			state.writable.group.a += 1
-			await state.wait()
-			await nap(100)
-			expect(aCalls).equals(2)
-	
-			state.writable.group.a += 1
-			await state.wait()
-			expect(aCalls).equals(3)
+		"debouncing updates": {
+			async "multiple updates are debounced"() {
+				const state = deepstate({group: {a: 0}})
+				let calls = 0
+				state.track(readable => {
+					void readable.group.a
+					calls += 1
+				})
+				state.writable.group.a += 1
+				state.writable.group.a += 1
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(2)
+			},
+			async "two waits in sequence work"() {
+				const state = deepstate({group: {a: 0, b: 0}})
+				let aCalls = 0
+				state.track(readable => {
+					void readable.group.a
+					aCalls += 1
+				})
+				expect(aCalls).equals(1)
+		
+				state.writable.group.a += 1
+				await state.wait()
+				await nap(100)
+				expect(aCalls).equals(2)
+		
+				state.writable.group.a += 1
+				await state.wait()
+				expect(aCalls).equals(3)
+			},
 		},
 	},
 }
