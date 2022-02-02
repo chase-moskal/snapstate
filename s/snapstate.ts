@@ -6,7 +6,7 @@ import {forceNestedProperty} from "./tools/force-nested-property.js"
 import {containsPathOrChildren, containsPath, containsPathOrParents} from "./parts/paths.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
 
-import type {StateTree, Readable, Subscription, TrackingSession, Snapstate} from "./types.js"
+import type {StateTree, Read, Subscription, TrackingSession, Snapstate} from "./types.js"
 
 export * from "./types.js"
 export * from "./parts/errors.js"
@@ -38,7 +38,8 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 	}
 
 	const writable = <xTree>recurse(true, [])
-	const readable = <Readable<xTree>>recurse(false, [])
+	const readable = <xTree>recurse(false, [])
+	const readonly = <Read<xTree>>recurse(false, [])
 
 	let updateQueue: string[][] = []
 	const update = debounce(1, () => {
@@ -113,6 +114,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 	return {
 		writable,
 		readable,
+		readonly,
 		subscribe(subscription) {
 			subscriptions.add(subscription)
 			const unsubscribe = () => subscriptions.delete(subscription)
@@ -151,11 +153,13 @@ export function substate<xTree extends StateTree, xSubtree extends StateTree>(
 	): Snapstate<xSubtree> {
 	const writable = grabber(state.writable)
 	const readable = grabber(<xTree>state.readable)
+	const readonly = grabber(<xTree>state.readonly)
 	const untrackers = new Set<() => void>()
 	const unsubscribers = new Set<() => void>()
 	return {
 		writable,
 		readable,
+		readonly,
 		subscribe(subscription) {
 			// substate subscription actually uses a flipped track,
 			// which allows us to receive updates for any property
