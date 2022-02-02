@@ -260,6 +260,25 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
 
 <br/>
 
+### 📜 beware of arrays, maps, and other fancy objects
+
+- snapstate only tracks when properties are written.
+- what this means, is that methods like `array.push` aren't visible to snapstate:
+  ```js
+  const state = snapstate({myArray: []})
+
+  // bad -- updates will not respond.
+  state.writable.myArray.push("hello")
+  ```
+- to update an array, we must wholly replace it:
+  ```js
+  // good -- updates will respond.
+  state.writable.myArray = [...state.writable.myArray, "hello"]
+  ```
+- this is an entirely survivable state of affairs, but we may eventually do the work to implement special handling for arrays, maps, sets, and other common objects. *(contributions welcome!)*
+
+<br/>
+
 ## 💖 made with open source love
 
 mit licensed.
