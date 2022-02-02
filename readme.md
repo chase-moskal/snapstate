@@ -1,4 +1,6 @@
 
+<br/>
+
 # 🔮 snapstate
 
 *tiny robust state management*
@@ -23,7 +25,7 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
 
 ### 💾 `readable` and `writable`
 
-- the first cool thing about snapstate, is that is separates the `readable` and `writable` access to your state.
+- the first cool thing about snapstate, is that it separates the `readable` and `writable` access to your state. you'll soon learn why that's rad.
 - let's create some state.
   ```js
   import {snapstate} from "@chasemoskal/snapstate"
