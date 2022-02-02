@@ -1,21 +1,21 @@
 
 import {Suite, expect} from "cynic"
 import {snapstate, substate} from "./snapstate.js"
-import {plantProperty} from "./tools/plant-property.js"
+import {forceNestedProperty} from "./tools/force-nested-property.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
 
 export default <Suite>{
 	debounce,
-	"plant property": {
+	"force nested property": {
 		async "plant a property on an object"() {
 			const obj: {[key: string]: boolean} = {}
-			plantProperty(obj, ["a"], true)
+			forceNestedProperty(obj, ["a"], true)
 			expect(obj.a === true).ok()
 		},
 		async "plant a nested property"() {
 			const obj: {[key: string]: any} = {}
-			plantProperty(obj, ["a", "b"], true)
+			forceNestedProperty(obj, ["a", "b"], true)
 			expect(obj.a.b === true).ok()
 		},
 	},

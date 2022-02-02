@@ -2,9 +2,10 @@
 /**
  * insert a value into an object tree.
  *  - add missing objects to the tree, according to the path.
+ *  - replace any non-object properties with objects along the way.
  *  - sets the property value, onto the deepest object.
  */
-export function plantProperty(
+export function forceNestedProperty(
 		object: {[key: string]: any},
 		path: string[],
 		value: any,

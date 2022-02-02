@@ -2,7 +2,7 @@
 import {clone} from "./tools/clone.js"
 import {obtain} from "./tools/obtain.js"
 import {debounce} from "./tools/debounce/debounce.js"
-import {plantProperty} from "./tools/plant-property.js"
+import {forceNestedProperty} from "./tools/force-nested-property.js"
 import {containsPathOrChildren, containsPath} from "./parts/paths.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
 
@@ -11,8 +11,8 @@ import type {StateTree, Readable, Subscription, TrackingSession, Snapstate} from
 export * from "./types.js"
 export * from "./parts/errors.js"
 export * from "./tools/obtain.js"
-export * from "./tools/plant-property.js"
 export * from "./tools/debounce/debounce.js"
+export * from "./tools/force-nested-property.js"
 
 export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree> {
 	const masterTree = clone(tree)
@@ -39,6 +39,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 		for (const path of updateQueue) {
 			activeUpdate = true
 			try {
+
 				// trigger subscriptions
 				for (const subscription of subscriptions) {
 					subscription(readable)
@@ -87,7 +88,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 				if (allowWrites) {
 					if (activeTrackThatIsRecording || activeUpdate)
 						throw new SnapstateCircularError("forbidden state circularity")
-					plantProperty(masterTree, currentPath, value)
+					forceNestedProperty(masterTree, currentPath, value)
 					queueUpdate(currentPath)
 					return true
 				}
