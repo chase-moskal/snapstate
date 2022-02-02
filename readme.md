@@ -50,6 +50,9 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
   ```js
   state.writable.count += 1
    // this is allowed
+
+  console.log(state.readable.count)
+   // 1
   ```
 - this separation is great, because we can pass `readable` to parts of our application that should not be allowed to change the state. this is how we control access.
 - this makes it easy to formalize *actions.* it's as easy as giving our action functions access to the `writable` state.
@@ -72,6 +75,8 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
 
 - we can track changes to the properties we care about.
   ```js
+  const state = snapstate({count: 0, coolmode: "enabled"})
+
   state.track(() => {
     console.log(`count changed: ${state.readable.count}`)
       //                                         ☝️
@@ -85,11 +90,13 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
    // 1 -- automatically runs the relevant tracker functions
 
   state.writable.coolmode = "disabled"
-   // ~ nothing happens ~
+   // ~ nothing is logged to console ~
    // our track callback doesn't care about this property
   ```
 - we can be more pedantic, with a custom tracker, to avoid the initial run.
   ```js
+  const state = snapstate({count: 0, coolmode: "enabled"})
+
   state.track(
 
     // observer: listen specifically to "count"
@@ -104,6 +111,7 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
   ```
 - we can also stop tracking things when we want.
   ```js
+  const state = snapstate({count: 0, coolmode: "enabled"})
   const untrack = state.track(() => console.log(count))
 
   state.writable.count += 1
@@ -120,7 +128,7 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
 
 - we can nest our state to arbitrary depth.
   ```js
-  const deepstate = snapstate({
+  const state = snapstate({
     group1: {
       group2: {
         data: "hello!",
@@ -130,8 +138,8 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
   ```
 - we can track changes to properties, or groups.
   ```js
-  deepstate.track(readable => console.log(readable.group1.group2.hello))
-  deepstate.track(readable => console.log(readable.group1))
+  state.track(readable => console.log(readable.group1.group2.hello))
+  state.track(readable => console.log(readable.group1))
   ```
 
 <br/>
@@ -149,6 +157,7 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
   const unsubscribe = state.subscribe(readable => {
     console.log("something has changed")
   })
+
   unsubscribe()
   ```
 
@@ -194,7 +203,6 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
 ### ♻️ circular-safety
 
 - you are prevented from writing to state while reacting to it.
-- you can catch these errors on `state.wait()`.
 - you can't make circles with track observers:
   ```js
   state.track(() => {
@@ -220,18 +228,19 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
   await state.wait()
    // SnapstateCircularError -- try again, pal!
   ```
+- you can catch these async errors on `state.wait()`.
 
 <br/>
 
 ### ✂️ substate: carve your state into subsections
 
-- it's awkward to pass your whole application state to every part of your app.
+- it's awkward to pass your whole application state to every little part of your app.
 - so you can snip off chunks, to pass along to the components that need it.
   ```js
   import {snapstate, substate} from "@chasemoskal/snapstate"
 
   const state = snapstate({
-    count: 1,
+    outerCount: 1,
     coolgroup: {
       innerCount: 2,
     }
@@ -239,7 +248,7 @@ snapstate is our mobx replacement. mobx is great, but ridiculously large at like
 
   const coolgroup = substate(state, tree => tree.coolgroup)
 
-  // coolgroup has no access to "count"
+  // note: coolgroup has no access to "outerCount"
   console.log(coolgroup.readable.innerCount)
    // 2
 
