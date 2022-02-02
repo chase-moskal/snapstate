@@ -3,13 +3,13 @@ export interface StateTree {
 	[key: string]: StateTree | any
 }
 
-export type Readable<xTree> = {
+export type Read<xTree> = {
 	readonly [P in keyof xTree]: xTree[P] extends StateTree
-		? Readable<xTree[P]>
+		? Read<xTree[P]>
 		: xTree[P]
 }
 
-export type Observer<xTree, X> = (readable: Readable<xTree>) => X
+export type Observer<xTree, X> = (readable: xTree) => X
 export type Reaction<X> = (x: X) => void
 
 export interface TrackingSession {
@@ -19,11 +19,12 @@ export interface TrackingSession {
 	reaction?: Reaction<any>
 }
 
-export type Subscription<xTree extends StateTree> = (readable: Readable<xTree>) => void
+export type Subscription<xTree extends StateTree> = (readable: xTree) => void
 
 export interface Snapstate<xTree extends StateTree> {
 	writable: xTree
-	readable: Readable<xTree>
+	readable: xTree
+	readonly: Read<xTree>
 	subscribe(subscription: Subscription<xTree>): () => void
 	track<X>(observer: Observer<xTree, X>, reaction?: Reaction<X>, options?: {flip?: boolean}): () => void
 	unsubscribeAll(): void
