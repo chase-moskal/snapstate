@@ -53,4 +53,20 @@ export default <Suite>{
 		await nap(201)
 		expect(done).equals(true)
 	},
+	async "can wait multiple rounds"() {
+		let count = 0
+		const increment = debounce(100, () => {
+			count += 1
+		})
+		await increment()
+		expect(count).equals(1)
+		await increment()
+		expect(count).equals(2)
+	},
+	async "errors are passed into promise chain"() {
+		const err = debounce(1, () => {
+			throw new Error()
+		})
+		await expect(async() => err()).throws()
+	},
 }

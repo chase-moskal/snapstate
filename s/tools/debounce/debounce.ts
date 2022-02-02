@@ -8,19 +8,26 @@ export function debounce<xAction extends AnyFunction>(
 
 	let latestArgs: any[]
 	let timeout: any
-	let promise: Promise<ReturnType<xAction>>
-	let resolve: (r: ReturnType<xAction>) => void
-	let reject: (reason: any) => void
+	// let promise: Promise<ReturnType<xAction>>
+
+	let waitingQueue: {
+		resolve: (r: ReturnType<xAction>) => void
+		reject: (reason: any) => void
+	}[] = []
+
+	// let resolve: (r: ReturnType<xAction>) => void
+	// let reject: (reason: any) => void
 
 	function reset() {
 		latestArgs = undefined
 		if (timeout)
 			clearTimeout(timeout)
 		timeout = undefined
-		promise = new Promise((res, rej) => {
-			resolve = res
-			reject = rej
-		})
+		// promise = new Promise((res, rej) => {
+		// 	resolve = res
+		// 	reject = rej
+		// })
+		waitingQueue = []
 	}
 
 	reset()
@@ -31,11 +38,23 @@ export function debounce<xAction extends AnyFunction>(
 		if (timeout)
 			clearTimeout(timeout)
 
+		const promise = new Promise((resolve, reject) => {
+			waitingQueue.push({resolve, reject})
+		})
+
 		timeout = setTimeout(() => {
-			Promise.resolve(action(...latestArgs))
-				.then(r => resolve(r))
-				.catch(err => reject(err))
-				.finally(() => reset())
+			Promise.resolve()
+				.then(() => action(...latestArgs))
+				.then(r => {
+					for (const {resolve} of waitingQueue)
+						resolve(r)
+					reset()
+				})
+				.catch(err => {
+					for (const {reject} of waitingQueue)
+						reject(err)
+					reset()
+				})
 		}, delay)
 
 		return promise
