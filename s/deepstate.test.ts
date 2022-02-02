@@ -1,6 +1,6 @@
 
 import {Suite, expect} from "cynic"
-import {deepstate, subsection} from "./deepstate.js"
+import {deepstate, substate} from "./deepstate.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
 
@@ -179,36 +179,36 @@ export default <Suite>{
 		"subsectioning": {
 			async "subsection reading and writing works"() {
 				const state = deepstate({group: {a: 0}})
-				const substate = subsection(state, readable => readable.group)
-				expect(substate.readable.a).equals(0)
-				substate.writable.a += 1
-				expect(substate.readable.a).equals(1)
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
+				group.writable.a += 1
+				expect(group.readable.a).equals(1)
 			},
 			async "subsection subscription works"() {
 				const state = deepstate({group: {a: 0}})
-				const substate = subsection(state, readable => readable.group)
-				expect(substate.readable.a).equals(0)
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
 				let calls = 0
-				substate.subscribe(readable => calls += 1)
+				group.subscribe(readable => calls += 1)
 				expect(calls).equals(0)
-				substate.writable.a += 1
-				expect(substate.readable.a).equals(1)
-				await substate.wait()
+				group.writable.a += 1
+				expect(group.readable.a).equals(1)
+				await group.wait()
 				expect(calls).equals(1)
 			},
 			async "subsection tracking works"() {
 				const state = deepstate({group: {a: 0}})
-				const substate = subsection(state, readable => readable.group)
-				expect(substate.readable.a).equals(0)
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
 				let calls = 0
-				substate.track(readable => {
+				group.track(readable => {
 					void readable.a
 					calls += 1
 				})
 				expect(calls).equals(1)
-				substate.writable.a += 1
-				expect(substate.readable.a).equals(1)
-				await substate.wait()
+				group.writable.a += 1
+				expect(group.readable.a).equals(1)
+				await group.wait()
 				expect(calls).equals(2)
 			},
 		},

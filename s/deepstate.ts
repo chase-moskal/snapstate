@@ -150,7 +150,7 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 	}
 }
 
-export function subsection<xState extends ReturnType<typeof deepstate>, xTree>(
+export function substate<xState extends ReturnType<typeof deepstate>, xTree>(
 		state: xState,
 		grabber: (tree: xState["writable"]) => xTree
 	) {
