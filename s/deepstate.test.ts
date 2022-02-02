@@ -37,26 +37,26 @@ export default <Suite>{
 		// 	state.writable.group.a += 1
 		// 	expect(calls).equals(1)
 		// },
-		// async "state property is trackable"() {
-		// 	const state = deepstate({group: {a: 0}})
-		// 	let calls = 0
-		// 	state.track(readable => {
-		// 		void readable.group.a
-		// 		calls += 1
-		// 	})
-		// 	state.writable.group.a += 1
-		// 	expect(calls).equals(2)
-		// },
-		// async "state property track reaction to avoid initial call"() {
-		// 	const state = deepstate({group: {a: 0}})
-		// 	let calls = 0
-		// 	state.track(
-		// 		readable => ({a: readable.group.a}),
-		// 		() => calls += 1,
-		// 	)
-		// 	state.writable.group.a += 1
-		// 	expect(calls).equals(1)
-		// },
+		async "state property is trackable"() {
+			const state = deepstate({group: {a: 0}})
+			let calls = 0
+			state.track(readable => {
+				void readable.group.a
+				calls += 1
+			})
+			state.writable.group.a += 1
+			expect(calls).equals(2)
+		},
+		async "state property track reaction to avoid initial call"() {
+			const state = deepstate({group: {a: 0}})
+			let calls = 0
+			state.track(
+				readable => ({a: readable.group.a}),
+				() => calls += 1,
+			)
+			state.writable.group.a += 1
+			expect(calls).equals(1)
+		},
 		// async "state group triggers trackers for properties"() {
 		// 	const state = deepstate({group: {a: 0}})
 		// 	let calls = 0
