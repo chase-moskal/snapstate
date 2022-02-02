@@ -63,4 +63,10 @@ export default <Suite>{
 		await increment()
 		expect(count).equals(2)
 	},
+	async "errors are passed into promise chain"() {
+		const err = debounce(1, () => {
+			throw new Error()
+		})
+		await expect(async() => err()).throws()
+	},
 }

@@ -3,7 +3,7 @@ import {obtain} from "./tools/obtain.js"
 import {objectMap} from "./tools/object-map.js"
 import {debounce} from "./tools/debounce/debounce.js"
 import {plantProperty} from "./tools/plant-property.js"
-import {SnapstateReadonlyError} from "./parts/errors.js"
+import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
 
 export interface StateTree {
 	[key: string]: StateTree | any
@@ -54,6 +54,7 @@ export type Subscription<xTree extends StateTree> = (readable: Readable<xTree>) 
 export function deepstate<xTree extends StateTree>(tree: xTree) {
 	const masterTree = clone(tree)
 
+	let activeUpdate = false
 	let activeTrackThatIsRecording: TrackingSession
 	const trackingSessions = new Map<symbol, TrackingSession>()
 	const subscriptions = new Set<Subscription<xTree>>()
@@ -73,18 +74,23 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 	let updateQueue: string[][] = []
 	const update = debounce(1, () => {
 		for (const path of updateQueue) {
-
-			// trigger subscriptions
-			for (const subscription of subscriptions) {
-				subscription(readable)
+			activeUpdate = true
+			try {
+				// trigger subscriptions
+				for (const subscription of subscriptions) {
+					subscription(readable)
+				}
+	
+				// trigger reactions
+				for (const {observer, reaction} of findTrackingSessions(path)) {
+					if (reaction)
+						reaction(observer(readable))
+					else
+						observer(readable)
+				}
 			}
-
-			// trigger reactions
-			for (const {observer, reaction} of findTrackingSessions(path)) {
-				if (reaction)
-					reaction(observer(readable))
-				else
-					observer(readable)
+			finally {
+				activeUpdate = false
 			}
 		}
 		updateQueue = []
@@ -116,6 +122,8 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 			set(t, property: string, value: any) {
 				const currentPath = [...path, property]
 				if (allowWrites) {
+					if (activeTrackThatIsRecording || activeUpdate)
+						throw new SnapstateCircularError("forbidden state circularity")
 					plantProperty(masterTree, currentPath, value)
 					queueUpdate(currentPath)
 					return true

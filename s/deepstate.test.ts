@@ -154,6 +154,27 @@ export default <Suite>{
 				expect(calls).equals(2)
 			},
 		},
+		"forbid circularities": {
+			async "prevent circular subscription"() {
+				const state = deepstate({a: 0})
+				state.subscribe(() => state.writable.a += 1)
+				state.writable.a += 1
+				await expect(state.wait).throws()
+			},
+			async "prevent circular tracking"() {
+				const state = deepstate({a: 0})
+				expect(() => state.track(() => state.writable.a += 1)).throws()
+			},
+			async "prevent circular tracking reaction"() {
+				const state = deepstate({a: 0})
+				state.track(
+					readable => ({a: readable.a}),
+					() => state.writable.a += 1,
+				)
+				state.writable.a += 1
+				expect(state.wait).throws()
+			},
+		},
 		"debouncing updates": {
 			async "multiple updates are debounced"() {
 				const state = deepstate({group: {a: 0}})
