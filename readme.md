@@ -257,6 +257,9 @@ snapstate is designed to be a modern replacement for mobx. mobx was amazing, but
   await coolgroup.wait()
    // 3
   ```
+  - a substate's `subscribe` function only listens to its subsection of the state.
+  - a substate's `untrackAll` function only applies to tracking called on the subsection.
+  - a substate's `unsubscribeAll` function only applies to subscriptions called on the subsection.
 
 <br/>
 
