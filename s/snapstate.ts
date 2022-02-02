@@ -37,9 +37,9 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 		return sessions
 	}
 
-	const writable = <xTree>recurse(true, [])
-	const readable = <xTree>recurse(false, [])
-	const readonly = <Read<xTree>>recurse(false, [])
+	const writable = <xTree>recurse(masterTree, true, [])
+	const readable = <xTree>recurse(masterTree, false, [])
+	const readonly = <Read<xTree>>recurse(masterTree, false, [])
 
 	let updateQueue: string[][] = []
 	const update = debounce(1, () => {
@@ -73,8 +73,8 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 		waiter = update()
 	}
 
-	function recurse(allowWrites: boolean, path: string[]): any {
-		return new Proxy({}, {
+	function recurse(target: {}, allowWrites: boolean, path: string[]): any {
+		return new Proxy(target, {
 			get(t: any, property: string) {
 				const currentPath = [...path, property]
 
@@ -87,7 +87,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 
 				const value = obtain(masterTree, currentPath)
 				return typeof value === "object"
-					? recurse(allowWrites, currentPath)
+					? recurse(value, allowWrites, currentPath)
 					: value
 			},
 			set(t, property: string, value: any) {
