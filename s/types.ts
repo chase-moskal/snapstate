@@ -1,32 +1,21 @@
 
-import {snapstate} from "./snapstate.js"
-import {trackingMechanics} from "./parts/tracking-mechanics.js"
+export interface StateTree {
+	[key: string]: StateTree | any
+}
 
-export type Observer<xState, X> = (readable: Readable<xState>) => X
+export type Readable<xTree> = {
+	readonly [P in keyof xTree]: xTree[P] extends StateTree
+		? Readable<xTree[P]>
+		: xTree[P]
+}
+
+export type Observer<xTree, X> = (readable: Readable<xTree>) => X
 export type Reaction<X> = (x: X) => void
 
-export type Track = ReturnType<typeof trackingMechanics>["track"]
-
-export type Readable<xState extends {}> = {
-	readonly [P in keyof xState]: xState[P]
+export interface TrackingSession {
+	paths: string[][]
+	observer: Observer<any, any>
+	reaction?: Reaction<any>
 }
 
-export interface SnapstateTree {
-	[key: string]: SnapstateTree | ReturnType<typeof snapstate>
-}
-
-export type ReadableTree<xTree extends SnapstateTree> = {
-	[P in keyof xTree]: xTree[P] extends ReturnType<typeof snapstate>
-		? xTree[P]["readable"]
-		: xTree[P] extends SnapstateTree
-			? ReadableTree<xTree[P]>
-			: never
-}
-
-export type WritableTree<xTree extends SnapstateTree> = {
-	[P in keyof xTree]: xTree[P] extends ReturnType<typeof snapstate>
-		? xTree[P]["writable"]
-		: xTree[P] extends SnapstateTree
-			? WritableTree<xTree[P]>
-			: never
-}
+export type Subscription<xTree extends StateTree> = (readable: Readable<xTree>) => void

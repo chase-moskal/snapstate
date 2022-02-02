@@ -6,7 +6,7 @@
 			"request": "launch",
 			"name": "debug",
 			"program": "${workspaceFolder}/node_modules/cynic/dist/cli.js",
-			"args": ["node", "x/deepstate.test.js"],
+			"args": ["node", "x/snapstate.test.js"],
 			"stopOnEntry": false
 		}
 	]

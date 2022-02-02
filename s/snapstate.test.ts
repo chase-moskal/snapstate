@@ -1,189 +1,293 @@
 
-import {Suite, assert, expect} from "cynic"
-import {composeSnapstate, snapstate} from "./snapstate.js"
+import {Suite, expect} from "cynic"
+import {snapstate, substate} from "./snapstate.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
 
 export default <Suite>{
 	debounce,
-	async "subscriptions are fired"() {
-		const state = snapstate({count: 0})
-		let fired = 0
-		state.subscribe(() => fired += 1)
-		state.writable.count += 1
-		await state.wait()
-		assert(fired === 1, "basic subscription should have fired")
-	},
-	async "track reactions are fired"() {
-		const state = snapstate({count: 0, lol: false})
-		let fired = 0
-		state.track(() => {
-			void state.readable.count
-			fired += 1
-		})
-		state.writable.lol = true
-		state.writable.count += 1
-		await state.wait()
-		assert(fired === 2, "track reaction should have fired")
-		state.writable.count += 1
-		state.writable.count += 1
-		state.writable.count += 1
-		await state.wait()
-		assert(fired === 3, `track reactions should be debounced, 3 expected, got ${fired}`)
-	},
-	async "relevant track reactions are fired"() {
-		const state = snapstate({a: 0, b: 0})
-		let aReactionCount = 0
-		let bReactionCount = 0
-		state.track(() => {
-			void state.readable.a
-			aReactionCount += 1
-		})
-		state.track(() => {
-			void state.readable.b
-			bReactionCount += 1
-		})
-		expect(aReactionCount).equals(1)
-		expect(bReactionCount).equals(1)
-
-		state.writable.a += 1
-		await state.wait()
-		expect(aReactionCount).equals(2)
-		expect(bReactionCount).equals(1)
-
-		state.writable.b += 1
-		await state.wait()
-		expect(aReactionCount).equals(2)
-		expect(bReactionCount).equals(2)
-	},
-	async "advanced tracks are fired"() {
-		const state = snapstate({count: 0})
-		const counts: number[] = []
-		state.track(({count}) => ({count}), ({count}) => { counts.push(count) })
-		state.writable.count = 5
-		state.writable.count = 6
-		await state.wait()
-		assert(counts.length === 1, `advanced reaction should be debounced and fire once, got ${counts.length}`)
-		expect(counts[0]).equals(6)
-		state.writable.count = 7
-		await state.wait()
-		assert(counts.length === 2, `advacned reaction should fire twice`)
-		expect(counts[1]).equals(7)
-	},
-	async "readable throws error on write"() {
-		const state = snapstate({count: 0})
-		expect(() => (<any>state).readable.count += 1)
-			.throws()
-	},
-	async "writable can read"() {
-		const state = snapstate({count: 0})
-		state.writable.count += 1
-		assert(state.writable.count === 1)
-	},
-	async "forbid circular: initial track"() {
-		const state = snapstate({count: 0})
-		expect(() => {
-			state.track(() => {
-				state.writable.count += state.readable.count
-			})
-		}).throws()
-	},
-	"snapstate compose": {
-		async "composed snapstates are readable"() {
-			const state = composeSnapstate({
-				alpha: snapstate({a: 1}),
-				bravo: snapstate({b: 1}),
-			})
-			expect(state.readable.alpha.a).equals(1)
-			expect(state.readable.bravo.b).equals(1)
-			expect(state.writable.alpha.a).equals(1)
-			expect(state.writable.bravo.b).equals(1)
+	"snapstate": {
+		"reading and writing": {
+			async "state property is readable"() {
+				const state = snapstate({group: {a: 0}})
+				expect(state.readable.group.a).equals(0)
+			},
+			async "state property can be read from writable"() {
+				const state = snapstate({group: {a: 0}})
+				expect(state.writable.group.a).equals(0)
+			},
+			async "state readable properties are readonly"() {
+				const state = snapstate({group: {a: 0}})
+				expect(() => (<any>state.readable).group.a += 1).throws()
+			},
+			async "state readable groups are readonly"() {
+				const state = snapstate({group: {a: 0}})
+				expect(() => (<any>state.readable).group = {a: 1}).throws()
+			},
+			async "state property is writable"() {
+				const state = snapstate({group: {a: 0}})
+				state.writable.group.a += 1
+				expect(state.readable.group.a).equals(1)
+			},
+			async "state group is writable"() {
+				const state = snapstate({group: {a: 0}})
+				state.writable.group = {a: 1}
+				expect(state.readable.group.a).equals(1)
+			},
+			async "read and write from state root"() {
+				const state = snapstate({a: 0, b: 0})
+				expect(state.readable.a).equals(0)
+				state.writable.a += 1
+				expect(state.readable.a).equals(1)
+			},
 		},
-		async "composed snapstates are writable"() {
-			const state = composeSnapstate({
-				alpha: snapstate({a: 1}),
-				bravo: snapstate({b: 1}),
-			})
-			state.writable.alpha.a = 2
-			state.writable.bravo.b = 2
-			await state.wait()
-			expect(state.readable.alpha.a).equals(2)
-			expect(state.readable.bravo.b).equals(2)
-			expect(state.writable.alpha.a).equals(2)
-			expect(state.writable.bravo.b).equals(2)
+		"subscriptions": {
+			async "state property is subscribable"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				state.subscribe(readable => calls += 1)
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(1)
+			},
+			async "subscription can be unsubscribed"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				const unsubscribe = state.subscribe(readable => calls += 1)
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(1)
+				unsubscribe()
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(1)
+			},
 		},
-		async "composed snapstates are subscribable"() {
-			const state = composeSnapstate({
-				alpha: snapstate({a: 1}),
-				bravo: snapstate({b: 1}),
-			})
-			let alphaRead: number
-			let bravoRead: number
-			state.subscribe(() => {
-				alphaRead = state.readable.alpha.a
-				bravoRead = state.readable.bravo.b
-			})
-
-			state.writable.alpha.a = 2
-			await state.wait()
-			expect(state.readable.alpha.a).equals(2)
-			expect(alphaRead).equals(2)
-
-			state.writable.bravo.b = 2
-			await state.wait()
-			expect(state.readable.bravo.b).equals(2)
-			expect(bravoRead).equals(2)
+		"tracking": {
+			async "state property is trackable"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				state.track(readable => {
+					void readable.group.a
+					calls += 1
+				})
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(2)
+			},
+			async "only the relevant properties are tracked"() {
+				const state = snapstate({group: {a: 0, b: 0}})
+				let aCalls = 0
+				let bCalls = 0
+				state.track(readable => {
+					void readable.group.a
+					aCalls += 1
+				})
+				state.track(readable => {
+					void readable.group.b
+					bCalls += 1
+				})
+				expect(aCalls).equals(1)
+				expect(bCalls).equals(1)
+		
+				state.writable.group.a += 1
+				await state.wait()
+				expect(aCalls).equals(2)
+				expect(bCalls).equals(1)
+		
+				state.writable.group.b += 1
+				await state.wait()
+				expect(aCalls).equals(2)
+				expect(bCalls).equals(2)
+		
+				state.writable.group = {a: -1, b: -1}
+				await state.wait()
+				expect(aCalls).equals(3)
+				expect(bCalls).equals(3)
+			},
+			async "track can be untracked"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				const untrack = state.track(readable => {
+					void readable.group.a
+					calls += 1
+				})
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(2)
+				untrack()
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(2)
+			},
+			async "state property track reaction to avoid initial call"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				state.track(
+					readable => ({a: readable.group.a}),
+					() => calls += 1,
+				)
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(1)
+			},
+			async "state group can be tracked"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				state.track(readable => {
+					void readable.group
+					calls += 1
+				})
+				state.writable.group = {a: 999}
+				await state.wait()
+				expect(calls).equals(2)
+			},
+			async "state group triggers trackers for properties"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				state.track(readable => {
+					void readable.group.a
+					calls += 1
+				})
+				state.writable.group = {a: 999}
+				await state.wait()
+				expect(calls).equals(2)
+			},
 		},
-		async "composed snapstates are trackable"() {
-			const state = composeSnapstate({
-				alpha: snapstate({a: 1}),
-				bravo: snapstate({b: 1}),
-			})
-			let numberOfAlphaTrackingResponses = 0
-			let numberOfBravoTrackingResponses = 0
-			state.track(() => void state.readable.alpha.a, () => {
-				numberOfAlphaTrackingResponses += 1
-			})
-			state.track(() => void state.readable.bravo.b, () => {
-				numberOfBravoTrackingResponses += 1
-			})
-			expect(numberOfAlphaTrackingResponses).equals(0)
-			expect(numberOfBravoTrackingResponses).equals(0)
+		"forbid circularities": {
+			async "prevent circular subscription"() {
+				const state = snapstate({a: 0})
+				state.subscribe(() => state.writable.a += 1)
+				state.writable.a += 1
+				await expect(state.wait).throws()
+			},
+			async "prevent circular tracking"() {
+				const state = snapstate({a: 0})
+				expect(() => state.track(() => state.writable.a += 1)).throws()
+			},
+			async "prevent circular tracking reaction"() {
+				const state = snapstate({a: 0})
+				state.track(
+					readable => ({a: readable.a}),
+					() => state.writable.a += 1,
+				)
+				state.writable.a += 1
+				expect(state.wait).throws()
+			},
+		},
+		"debouncing updates": {
+			async "multiple updates are debounced"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				state.track(readable => {
+					void readable.group.a
+					calls += 1
+				})
+				state.writable.group.a += 1
+				state.writable.group.a += 1
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(2)
+			},
+			async "two waits in sequence work"() {
+				const state = snapstate({group: {a: 0, b: 0}})
+				let aCalls = 0
+				state.track(readable => {
+					void readable.group.a
+					aCalls += 1
+				})
+				expect(aCalls).equals(1)
+		
+				state.writable.group.a += 1
+				await state.wait()
+				expect(aCalls).equals(2)
+		
+				state.writable.group.a += 1
+				await state.wait()
+				expect(aCalls).equals(3)
+			},
+		},
+		"subsectioning": {
+			async "subsection reading and writing works"() {
+				const state = snapstate({group: {a: 0}})
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
+				group.writable.a += 1
+				expect(group.readable.a).equals(1)
+			},
+			async "subsection subscription works"() {
+				const state = snapstate({group: {a: 0}})
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
+				let calls = 0
+				group.subscribe(() => calls += 1)
+				expect(calls).equals(0)
+				group.writable.a += 1
+				expect(group.readable.a).equals(1)
+				await group.wait()
+				expect(calls).equals(1)
+			},
+			async "subsection subscription interacts with root state"() {
+				const state = snapstate({group: {a: 0}})
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
+				let rootCalls = 0
+				let subCalls = 0
+				state.subscribe(() => rootCalls += 1)
+				group.subscribe(() => subCalls += 1)
+				expect(rootCalls).equals(0)
+				expect(subCalls).equals(0)
+				group.writable.a += 1
+				await state.wait()
+				expect(rootCalls).equals(1)
+				expect(subCalls).equals(1)
+				state.writable.group.a += 1
+				await state.wait()
+				expect(rootCalls).equals(2)
+				expect(subCalls).equals(2)
+			},
+			async "subsection tracking works"() {
+				const state = snapstate({group: {a: 0}})
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
+				let calls = 0
+				group.track(readable => {
+					void readable.a
+					calls += 1
+				})
+				expect(calls).equals(1)
+				group.writable.a += 1
+				expect(group.readable.a).equals(1)
+				await group.wait()
+				expect(calls).equals(2)
+			},
+			async "subsection tracking interacts with root"() {
+				const state = snapstate({group: {a: 0}})
+				const group = substate(state, readable => readable.group)
+				expect(group.readable.a).equals(0)
+				let rootCalls = 0
+				let subCalls = 0
+				state.track(readable => {
+					void readable.group.a
+					rootCalls += 1
+				})
+				group.track(readable => {
+					void readable.a
+					subCalls += 1
+				})
+				expect(rootCalls).equals(1)
+				expect(subCalls).equals(1)
 
-			state.writable.alpha.a += 1
-			await state.wait()
-			expect(numberOfAlphaTrackingResponses).equals(1)
-			expect(numberOfBravoTrackingResponses).equals(0)
+				group.writable.a += 1
+				await state.wait()
+				expect(rootCalls).equals(2)
+				expect(subCalls).equals(2)
 
-			state.writable.bravo.b += 1
-			await state.wait()
-			expect(numberOfAlphaTrackingResponses).equals(1)
-			expect(numberOfBravoTrackingResponses).equals(1)
+				state.writable.group.a += 1
+				await state.wait()
+				expect(rootCalls).equals(3)
+				expect(subCalls).equals(3)
+			},
 		},
 	},
-
-	// async "forbid circular: sneaky track"() {
-	// 	const state = snapstate({count: 0})
-	// 	let cond = false
-	// 	state.track(() => {
-	// 		void state.readable.count
-	// 		if (cond)
-	// 			state.writable.count += 1
-	// 	})
-	// 	cond = true
-	// 	await expect(async() => {
-	// 		state.writable.count = 1
-	// 		await state.wait()
-	// 	}).throws()
-	// },
-	// async "forbid circular: subscription"() {
-	// 	const state = snapstate({count: 0})
-	// 	state.subscribe(() => {
-	// 		state.writable.count += 1
-	// 	})
-	// 	await expect(async() => {
-	// 		state.writable.count = 1
-	// 		await state.wait()
-	// 	}).throws()
-	// },
 }
