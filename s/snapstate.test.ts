@@ -1,11 +1,24 @@
 
 import {Suite, expect} from "cynic"
 import {snapstate, substate} from "./snapstate.js"
+import {plantProperty} from "./tools/plant-property.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
 
 export default <Suite>{
 	debounce,
+	"plant property": {
+		async "plant a property on an object"() {
+			const obj: {[key: string]: boolean} = {}
+			plantProperty(obj, ["a"], true)
+			expect(obj.a === true).ok()
+		},
+		async "plant a nested property"() {
+			const obj: {[key: string]: any} = {}
+			plantProperty(obj, ["a", "b"], true)
+			expect(obj.a.b === true).ok()
+		},
+	},
 	"snapstate": {
 		"reading and writing": {
 			async "state property is readable"() {
@@ -287,6 +300,51 @@ export default <Suite>{
 				await state.wait()
 				expect(rootCalls).equals(3)
 				expect(subCalls).equals(3)
+			},
+		},
+		"nesting changes": {
+			async "deeply nested property is readable, and writable"() {
+				const state = snapstate({a: {b: {count: 0}}})
+				expect(state.readable.a.b.count).equals(0)
+				state.writable.a.b.count += 1
+				expect(state.readable.a.b.count).equals(1)
+			},
+			async "group can be removed and replaced, property tracks still work"() {
+				const state = snapstate({a: {b: {count: 0}}})
+				let lastTracked = -1
+				state.track(readable => lastTracked = readable.a?.b?.count)
+				expect(lastTracked).equals(0)
+				state.writable.a = undefined
+				await state.wait()
+				expect(lastTracked === undefined).equals(true)
+				state.writable.a = {b: {count: 1}}
+				await state.wait()
+				expect(lastTracked).equals(1)
+			},
+		},
+		"substate nesting changes": {
+			async "destroyed substate group is replaced by substate write"() {
+				const state = snapstate({a: {b: {count: 0}}})
+				const sub = substate(state, tree => tree.a.b)
+				let lastRootCount = -1
+				state.track(readable => lastRootCount = readable.a.b.count)
+				expect(sub.readable.count).equals(0)
+				state.writable.a = undefined
+				expect(sub.readable.count === undefined).equals(true)
+				sub.writable.count = 1
+				expect(sub.readable.count).equals(1)
+				expect(state.readable.a.b.count).equals(1)
+				await state.wait()
+				expect(lastRootCount).equals(1)
+			},
+			async "replaced substate group honors substate tracking"() {
+				const state = snapstate({a: {b: {count: 0}}})
+				const sub = substate(state, tree => tree.a.b)
+				let lastSubCount = -1
+				sub.track(readable => lastSubCount = readable.count)
+				state.writable.a = {b: {count: 1}}
+				await sub.wait()
+				expect(lastSubCount).equals(1)
 			},
 		},
 	},

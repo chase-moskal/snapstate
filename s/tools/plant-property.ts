@@ -13,10 +13,13 @@ export function plantProperty(
 	const finalKey = pathToSubObject.pop()
 	let currentSubObject: any = object
 	for (const key of pathToSubObject) {
-		if (typeof currentSubObject[key] === "object")
+		if (typeof currentSubObject[key] === "object") {
 			currentSubObject = currentSubObject[key]
-		else
+		}
+		else {
 			currentSubObject[key] = {}
+			currentSubObject = currentSubObject[key]
+		}
 	}
 	currentSubObject[finalKey] = value
 }
