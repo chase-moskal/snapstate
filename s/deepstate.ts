@@ -66,10 +66,10 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 		return sessions
 	}
 
-	const writable = <xTree>recurse(tree, true, [])
-	const readable = <Readable<xTree>>recurse(tree, false, [])
+	const writable = <xTree>recurse(true, [])
+	const readable = <Readable<xTree>>recurse(false, [])
 
-	function recurse(o: StateTree, allowWrites: boolean, path: string[]): any {
+	function recurse(allowWrites: boolean, path: string[]): any {
 		return new Proxy({}, {
 			get(t: any, property: string) {
 				const currentPath = [...path, property]
@@ -83,7 +83,7 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 
 				const value = obtain(masterTree, currentPath)
 				return typeof value === "object"
-					? recurse(value, allowWrites, currentPath)
+					? recurse(allowWrites, currentPath)
 					: value
 			},
 			set(t, property: string, value: any) {
