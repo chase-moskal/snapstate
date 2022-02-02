@@ -3,6 +3,7 @@ import {Suite, expect} from "cynic"
 import {deepstate} from "./deepstate.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
+import {nap} from "./tools/nap.js"
 
 export default <Suite>{
 	debounce,
@@ -64,6 +65,36 @@ export default <Suite>{
 				state.writable.group.a += 1
 				await state.wait()
 				expect(calls).equals(2)
+			},
+			async "only the relevant properties are tracked"() {
+				const state = deepstate({group: {a: 0, b: 0}})
+				let aCalls = 0
+				let bCalls = 0
+				state.track(readable => {
+					void readable.group.a
+					aCalls += 1
+				})
+				state.track(readable => {
+					void readable.group.b
+					bCalls += 1
+				})
+				expect(aCalls).equals(1)
+				expect(bCalls).equals(1)
+		
+				state.writable.group.a += 1
+				await state.wait()
+				expect(aCalls).equals(2)
+				expect(bCalls).equals(1)
+		
+				state.writable.group.b += 1
+				await state.wait()
+				expect(aCalls).equals(2)
+				expect(bCalls).equals(2)
+		
+				state.writable.group = {a: -1, b: -1}
+				await state.wait()
+				expect(aCalls).equals(3)
+				expect(bCalls).equals(3)
 			},
 			async "track can be untracked"() {
 				const state = deepstate({group: {a: 0}})
@@ -128,6 +159,24 @@ export default <Suite>{
 			state.writable.group.a += 1
 			await state.wait()
 			expect(calls).equals(2)
+		},
+		async "two waits in sequence work"() {
+			const state = deepstate({group: {a: 0, b: 0}})
+			let aCalls = 0
+			state.track(readable => {
+				void readable.group.a
+				aCalls += 1
+			})
+			expect(aCalls).equals(1)
+	
+			state.writable.group.a += 1
+			await state.wait()
+			await nap(100)
+			expect(aCalls).equals(2)
+	
+			state.writable.group.a += 1
+			await state.wait()
+			expect(aCalls).equals(3)
 		},
 	},
 }

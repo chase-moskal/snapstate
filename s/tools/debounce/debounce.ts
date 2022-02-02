@@ -33,9 +33,14 @@ export function debounce<xAction extends AnyFunction>(
 
 		timeout = setTimeout(() => {
 			Promise.resolve(action(...latestArgs))
-				.then(r => resolve(r))
-				.catch(err => reject(err))
-				.finally(() => reset())
+				.then(r => {
+					resolve(r)
+					reset()
+				})
+				.catch(err => {
+					reject(err)
+					reset()
+				})
 		}, delay)
 
 		return promise

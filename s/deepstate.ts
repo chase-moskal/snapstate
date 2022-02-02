@@ -1,9 +1,9 @@
 
 import {obtain} from "./tools/obtain.js"
 import {objectMap} from "./tools/object-map.js"
+import {debounce} from "./tools/debounce/debounce.js"
 import {plantProperty} from "./tools/plant-property.js"
 import {SnapstateReadonlyError} from "./parts/errors.js"
-import {debounce} from "./snapstate.js"
 
 export interface StateTree {
 	[key: string]: StateTree | any
@@ -71,7 +71,7 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 	const readable = <Readable<xTree>>recurse(false, [])
 
 	let updateQueue: string[][] = []
-	const update = debounce(0, () => {
+	const update = debounce(1, () => {
 		for (const path of updateQueue) {
 
 			// trigger subscriptions
@@ -87,6 +87,7 @@ export function deepstate<xTree extends StateTree>(tree: xTree) {
 					observer(readable)
 			}
 		}
+		updateQueue = []
 	})
 	let waiter: Promise<void> = Promise.resolve()
 	function queueUpdate(path: string[]) {

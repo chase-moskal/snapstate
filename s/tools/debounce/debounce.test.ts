@@ -53,4 +53,14 @@ export default <Suite>{
 		await nap(201)
 		expect(done).equals(true)
 	},
+	async "can wait multiple rounds"() {
+		let count = 0
+		const increment = debounce(100, () => {
+			count += 1
+		})
+		await increment()
+		expect(count).equals(1)
+		await increment()
+		expect(count).equals(2)
+	},
 }
