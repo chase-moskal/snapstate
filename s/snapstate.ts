@@ -13,8 +13,11 @@ import type {StateTree, Read, Subscription, TrackingSession, Snapstate} from "./
 export * from "./types.js"
 export * from "./parts/errors.js"
 export * from "./tools/obtain.js"
+export * from "./tools/unproxy.js"
 export * from "./tools/debounce/debounce.js"
 export * from "./tools/force-nested-property.js"
+
+export const symbolToAllowProxyIntoState = Symbol("symbolToAllowProxyIntoState")
 
 export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree> {
 	const masterTree = clone(tree)
@@ -97,7 +100,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 				if (allowWrites) {
 					if (activeTrackThatIsRecording || activeUpdate)
 						throw new SnapstateCircularError("forbidden state circularity")
-					forceNestedProperty(masterTree, currentPath, unproxy(value))
+					forceNestedProperty(masterTree, currentPath, unproxy(value, symbolToAllowProxyIntoState))
 					queueUpdate(currentPath)
 					return true
 				}

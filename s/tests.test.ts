@@ -1,7 +1,7 @@
 
 import {Suite, expect} from "cynic"
-import {snapstate, substate} from "./snapstate.js"
 import {forceNestedProperty} from "./tools/force-nested-property.js"
+import {snapstate, substate, symbolToAllowProxyIntoState} from "./snapstate.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
 
@@ -108,6 +108,29 @@ export default <Suite>{
 				const groupProxy = state.readable.group
 				state.writable.group = groupProxy
 				expect(state.writable.group.a).equals(1)
+			},
+			async "writing a nested readable proxy into state doesn't cause stack overflow"() {
+				const state = snapstate({
+					group1: {
+						group2: {a: 1}
+					},
+				})
+				state.writable.group1 = {
+					group2: state.readable.group1.group2,
+				}
+				expect(state.writable.group1.group2.a).equals(1)
+			},
+			async "allow proxy into state via 'allowProxy' symbol"() {
+				const state = snapstate({
+					group: {a: 1},
+				})
+				state.writable.group = new Proxy(<any>{}, {
+					get(t, property: string | symbol) {
+						if (property === symbolToAllowProxyIntoState) return true
+						else if (property === "a") return 2
+					}
+				})
+				expect(state.writable.group.a).equals(2)
 			},
 		},
 		"tracking": {
