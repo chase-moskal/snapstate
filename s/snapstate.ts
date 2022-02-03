@@ -1,19 +1,23 @@
 
 import {clone} from "./tools/clone.js"
 import {obtain} from "./tools/obtain.js"
+import {unproxy} from "./tools/unproxy.js"
 import {debounce} from "./tools/debounce/debounce.js"
 import {isPlainObject} from "./tools/is-plain-object.js"
 import {forceNestedProperty} from "./tools/force-nested-property.js"
-import {containsPathOrChildren, containsPath, containsPathOrParents} from "./parts/paths.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
+import {containsPathOrChildren, containsPath, containsPathOrParents} from "./parts/paths.js"
 
 import type {StateTree, Read, Subscription, TrackingSession, Snapstate} from "./types.js"
 
 export * from "./types.js"
 export * from "./parts/errors.js"
 export * from "./tools/obtain.js"
+export * from "./tools/unproxy.js"
 export * from "./tools/debounce/debounce.js"
 export * from "./tools/force-nested-property.js"
+
+export const symbolToAllowProxyIntoState = Symbol("symbolToAllowProxyIntoState")
 
 export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree> {
 	const masterTree = clone(tree)
@@ -96,7 +100,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 				if (allowWrites) {
 					if (activeTrackThatIsRecording || activeUpdate)
 						throw new SnapstateCircularError("forbidden state circularity")
-					forceNestedProperty(masterTree, currentPath, value)
+					forceNestedProperty(masterTree, currentPath, unproxy(value, symbolToAllowProxyIntoState))
 					queueUpdate(currentPath)
 					return true
 				}
