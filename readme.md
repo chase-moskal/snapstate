@@ -293,6 +293,33 @@ snapstate is designed to be a modern replacement for mobx. mobx was amazing, but
 
 <br/>
 
+### 🧬 using proxies in your state, if you must
+
+- snapstate doesn't like proxies in the state, so it makes object copies of them on-sight.
+- this is to prevent circularity issues, since snapstate's readables are proxies.
+- if you'd like to specifically allow a proxy, you can convince snapstate to allow it into the state, by having your proxy return `true` when `symbolToAllowProxyIntoState` is accessed.
+- snapstate will check for this symbol whenever it ingests objects into the state.
+- here's an example:
+  ```js
+  import {snapstate, symbolToAllowProxyIntoState} from "@chasemoskal/snapstate"
+
+  const state = snapstate({
+    proxy: new Proxy({}, {
+      get(t, property) {
+        if (property === symbolToAllowProxyIntoState)
+          return true
+        else if (property === "hello")
+          return "world!"
+      },
+    })
+  })
+
+  console.log(state.readable.proxy.hello)
+   // "world!"
+  ```
+
+<br/>
+
 ## 💖 made with open source love
 
 mit licensed.
