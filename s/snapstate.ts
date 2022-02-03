@@ -1,5 +1,4 @@
 
-import {clone} from "./tools/clone.js"
 import {obtain} from "./tools/obtain.js"
 import {unproxy} from "./tools/unproxy.js"
 import {debounce} from "./tools/debounce/debounce.js"
@@ -12,15 +11,19 @@ import type {StateTree, Read, Subscription, TrackingSession, Snapstate} from "./
 
 export * from "./types.js"
 export * from "./parts/errors.js"
-export * from "./tools/obtain.js"
-export * from "./tools/unproxy.js"
+
 export * from "./tools/debounce/debounce.js"
 export * from "./tools/force-nested-property.js"
+export * from "./tools/is-plain-object.js"
+export * from "./tools/nap.js"
+export * from "./tools/object-map.js"
+export * from "./tools/obtain.js"
+export * from "./tools/unproxy.js"
 
 export const symbolToAllowProxyIntoState = Symbol("symbolToAllowProxyIntoState")
 
 export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree> {
-	const masterTree = clone(tree)
+	const masterTree = unproxy(tree, symbolToAllowProxyIntoState)
 
 	let activeUpdate = false
 	let activeTrackThatIsRecording: TrackingSession

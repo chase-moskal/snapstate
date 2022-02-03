@@ -83,6 +83,17 @@ export default <Suite>{
 			},
 		},
 		"proxy handling": {
+			async "initial proxy with a pass is allowed into state"() {
+				const state = snapstate({
+					proxy: <{a: number}>new Proxy({}, {
+						get(t, property: string | symbol) {
+							if (property === symbolToAllowProxyIntoState) return true
+							else if (property === "a") return 1
+						},
+					})
+				})
+				expect(state.readable.proxy.a).equals(1)
+			},
 			async "writing readable proxy into state doesn't cause stack overflow"() {
 				const state = snapstate({group: {a: 1}})
 				const groupProxy = state.readable.group
