@@ -82,27 +82,7 @@ export default <Suite>{
 				expect(state.readable.array[0]).equals(1)
 			},
 		},
-		"subscriptions": {
-			async "state property is subscribable"() {
-				const state = snapstate({group: {a: 0}})
-				let calls = 0
-				state.subscribe(readable => calls += 1)
-				state.writable.group.a += 1
-				await state.wait()
-				expect(calls).equals(1)
-			},
-			async "subscription can be unsubscribed"() {
-				const state = snapstate({group: {a: 0}})
-				let calls = 0
-				const unsubscribe = state.subscribe(readable => calls += 1)
-				state.writable.group.a += 1
-				await state.wait()
-				expect(calls).equals(1)
-				unsubscribe()
-				state.writable.group.a += 1
-				await state.wait()
-				expect(calls).equals(1)
-			},
+		"proxy handling": {
 			async "writing readable proxy into state doesn't cause stack overflow"() {
 				const state = snapstate({group: {a: 1}})
 				const groupProxy = state.readable.group
@@ -131,6 +111,28 @@ export default <Suite>{
 					}
 				})
 				expect(state.writable.group.a).equals(2)
+			},
+		},
+		"subscriptions": {
+			async "state property is subscribable"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				state.subscribe(readable => calls += 1)
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(1)
+			},
+			async "subscription can be unsubscribed"() {
+				const state = snapstate({group: {a: 0}})
+				let calls = 0
+				const unsubscribe = state.subscribe(readable => calls += 1)
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(1)
+				unsubscribe()
+				state.writable.group.a += 1
+				await state.wait()
+				expect(calls).equals(1)
 			},
 		},
 		"tracking": {
