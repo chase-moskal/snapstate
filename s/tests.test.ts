@@ -103,6 +103,12 @@ export default <Suite>{
 				await state.wait()
 				expect(calls).equals(1)
 			},
+			async "writing readable proxy into state doesn't cause stack overflow"() {
+				const state = snapstate({group: {a: 1}})
+				const groupProxy = state.readable.group
+				state.writable.group = groupProxy
+				expect(state.writable.group.a).equals(1)
+			},
 		},
 		"tracking": {
 			async "state property is trackable"() {
