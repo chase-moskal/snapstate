@@ -48,7 +48,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 
 	const writable = <xTree>recurse(masterTree, true, [])
 	const readable = <xTree>recurse(masterTree, false, [])
-	const readonly = <Read<xTree>>recurse(masterTree, false, [])
+	const readonly = <Read<xTree>>readable
 
 	let updateQueue: string[][] = []
 	const update = debounce(1, () => {
@@ -165,7 +165,7 @@ export function substate<xTree extends StateTree, xSubtree extends StateTree>(
 	): Snapstate<xSubtree> {
 	const writable = grabber(state.writable)
 	const readable = grabber(<xTree>state.readable)
-	const readonly = grabber(<xTree>state.readonly)
+	const readonly = <Read<xSubtree>>readable
 	const untrackers = new Set<() => void>()
 	const unsubscribers = new Set<() => void>()
 	return {
