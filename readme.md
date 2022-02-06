@@ -294,7 +294,7 @@ if every part of our app can write to the state, all willy-nilly, it quickly bec
 
 ### 📜 beware of arrays, maps, and other fancy objects
 
-- snapstate only tracks changes when properties are set.
+- snapstate only tracks changes when properties are set on plain objects.
 - what this means, is that methods like `array.push` aren't visible to snapstate.
   ```js
   const snap = snapstate({myArray: []})
@@ -306,6 +306,13 @@ if every part of our app can write to the state, all willy-nilly, it quickly bec
   ```js
   // good -- updates will respond.
   snap.state.myArray = [...snap.state.myArray, "hello"]
+  ```
+- this also means that the properties on any class instances won't be tracked.
+  ```js
+  const snap = snapstate({
+    date: new Date(), // properties within this aren't tracked
+    myCoolObject: new MyCoolObject(), // properties within this aren't tracked
+  })
   ```
 - this is an entirely survivable state of affairs, but we may eventually do the work to implement special handling for arrays, maps, sets, and other common objects. *(contributions welcome!)*
 
