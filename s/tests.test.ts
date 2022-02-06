@@ -102,6 +102,12 @@ export default <Suite>{
 				expect(state.readable.array.length).equals(3)
 				expect(state.readable.array[0]).equals(1)
 			},
+			async "state and writable are aliases"() {
+				const snap = snapstate({count: 0})
+				expect(snap.readable.count).equals(0)
+				snap.state.count += 1
+				expect(snap.readable.count).equals(1)
+			},
 		},
 		"proxy handling": {
 			async "initial proxy with a pass is allowed into state"() {
