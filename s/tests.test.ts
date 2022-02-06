@@ -327,6 +327,26 @@ export default <Suite>{
 				expect(state.wait).throws()
 			},
 		},
+		"nesting changes": {
+			async "deeply nested property is readable, and writable"() {
+				const state = snapstate({a: {b: {count: 0}}})
+				expect(state.readable.a.b.count).equals(0)
+				state.writable.a.b.count += 1
+				expect(state.readable.a.b.count).equals(1)
+			},
+			async "group can be removed and replaced, property tracks still work"() {
+				const state = snapstate({a: {b: {count: 0}}})
+				let lastTracked = -1
+				state.track(readable => lastTracked = readable.a?.b?.count)
+				expect(lastTracked).equals(0)
+				state.writable.a = undefined
+				await state.wait()
+				expect(lastTracked === undefined).equals(true)
+				state.writable.a = {b: {count: 1}}
+				await state.wait()
+				expect(lastTracked).equals(1)
+			},
+		},
 		"debouncing updates": {
 			async "multiple updates are debounced"() {
 				const state = snapstate({group: {a: 0}})
@@ -462,26 +482,6 @@ export default <Suite>{
 				state.writable.group.b += 1
 				await state.wait()
 				expect(calls).equals(1)
-			},
-		},
-		"nesting changes": {
-			async "deeply nested property is readable, and writable"() {
-				const state = snapstate({a: {b: {count: 0}}})
-				expect(state.readable.a.b.count).equals(0)
-				state.writable.a.b.count += 1
-				expect(state.readable.a.b.count).equals(1)
-			},
-			async "group can be removed and replaced, property tracks still work"() {
-				const state = snapstate({a: {b: {count: 0}}})
-				let lastTracked = -1
-				state.track(readable => lastTracked = readable.a?.b?.count)
-				expect(lastTracked).equals(0)
-				state.writable.a = undefined
-				await state.wait()
-				expect(lastTracked === undefined).equals(true)
-				state.writable.a = {b: {count: 1}}
-				await state.wait()
-				expect(lastTracked).equals(1)
 			},
 		},
 		"substate nesting changes": {
