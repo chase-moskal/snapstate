@@ -21,9 +21,8 @@ export interface TrackingSession {
 
 export type Subscription<xTree extends StateTree> = (readable: xTree) => void
 
-export interface Snapstate<xTree extends StateTree> {
+export interface RestrictedSnapstate<xTree extends StateTree> {
 	state: xTree
-	writable: xTree
 	readable: xTree
 	readonly: Read<xTree>
 	subscribe(subscription: Subscription<xTree>): () => void
@@ -32,3 +31,12 @@ export interface Snapstate<xTree extends StateTree> {
 	untrackAll(): void
 	wait(): Promise<void>
 }
+
+export interface Snapstate<xTree extends StateTree> extends RestrictedSnapstate<xTree> {
+	writable: xTree
+}
+
+export type GetTree<xSnap extends RestrictedSnapstate<StateTree>> =
+	xSnap extends RestrictedSnapstate<infer xTree>
+		? xTree
+		: never

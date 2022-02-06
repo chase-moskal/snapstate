@@ -1,7 +1,7 @@
 
 import {Suite, expect} from "cynic"
 import {attemptNestedProperty} from "./tools/attempt-nested-property.js"
-import {obtain, snapstate, substate, symbolToAllowProxyIntoState} from "./snapstate.js"
+import {obtain, restricted, snapstate, substate, symbolToAllowProxyIntoState} from "./snapstate.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
 
@@ -505,6 +505,44 @@ export default <Suite>{
 				state.writable.a = {b: {count: 1}}
 				await sub.wait()
 				expect(lastSubCount).equals(1)
+			},
+		},
+		"restrictions": {
+			async "restricted snap isn't writable"() {
+				const snap = snapstate({a: {b: {count: 0}}})
+				const rsnap = restricted(snap)
+				expect((<any>rsnap).writable).not.defined()
+				expect(() => rsnap.state.a.b.count += 1).throws()
+			},
+			async "restricted snap is readable, trackable"() {
+				const snap = snapstate({a: {b: {count: 0}}})
+				const rsnap = restricted(snap)
+				let lastCount = -1
+				rsnap.track(state => lastCount = state.a.b.count)
+				expect(lastCount).equals(0)
+				snap.state.a.b.count += 1
+				expect(rsnap.state.a.b.count).equals(1)
+				await rsnap.wait()
+				expect(lastCount).equals(1)
+			},
+			async "restricted substate isn't writable"() {
+				const snap = snapstate({a: {b: {count: 0}}})
+				const sub = substate(snap, tree => tree.a)
+				const rsub = restricted(sub)
+				expect((<any>rsub).writable).not.defined()
+				expect(() => rsub.state.b.count += 1).throws()
+			},
+			async "restricted substate is readable, trackable"() {
+				const snap = snapstate({a: {b: {count: 0}}})
+				const sub = substate(snap, tree => tree.a)
+				const rsub = restricted(sub)
+				let lastCount = -1
+				rsub.track(state => lastCount = state.b.count)
+				expect(lastCount).equals(0)
+				sub.state.b.count += 1
+				expect(rsub.state.b.count).equals(1)
+				await rsub.wait()
+				expect(lastCount).equals(1)
 			},
 		},
 	},
