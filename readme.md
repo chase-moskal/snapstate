@@ -101,11 +101,22 @@ if every part of our app can write to the state, all willy-nilly, it quickly bec
   snap.readable.count += 1
    // SnapstateReadonlyError —— no way, bucko!
   ```
-- we can pass `readable` around to the parts of our application that should only have read-access to the state.
+- we can pass the `readable` around to the parts of our application that should only have read-access to the state (like our components).
+- but components will also need access to `track`, `subscribe`, and the rest of it —
+- so snapstate has a handy `restricted` function, which makes a read-only version of a snapstate.
+  ```js
+  import {snapstate, restricted} from "@chasemoskal/snapstate"
+  const snap = snapstate({count: 0})
+
+  myFrontendComponents({
+    snap: restricted(snap),
+  })
+  ```
 - it's easy to formalize actions with snapstate.
   ```js
   const snap = snapstate({count: 0})
 
+  // only our actions have write-access to state
   const actions = {
     increment() {
       snap.state.count += 1
@@ -114,17 +125,14 @@ if every part of our app can write to the state, all willy-nilly, it quickly bec
 
   myFrontendComponents({
 
-    // components should have readable access to the state
-    state: snap.readable,
-
-    // components should have the ability to track state changes
-    track: snap.track,
+    // components only have read-only access to the state.
+    snap: restricted(snap),
 
     // components can call our formalized actions to change the state.
     actions,
   })
   ```
-- `snap.state` and `snap.writable` are aliases for each other.
+- note: `snap.state` and `snap.writable` are aliases for each other.
 
 <br/>
 
@@ -263,6 +271,12 @@ if every part of our app can write to the state, all willy-nilly, it quickly bec
 - a substate's `subscribe` function only listens to its subsection of the state.
 - a substate's `untrackAll` function only applies to tracking called on the subsection.
 - a substate's `unsubscribeAll` function only applies to subscriptions called on the subsection.
+- substates can also be `restricted`.
+  ```js
+  const restrictedCoolgroup = restricted(coolgroup)
+  restrictedCoolgroup.state.innerCount += 1
+   // SnapstateReadonlyError
+  ```
 
 <br/>
 

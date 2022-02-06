@@ -7,7 +7,7 @@ import {attemptNestedProperty} from "./tools/attempt-nested-property.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
 import {containsPathOrChildren, containsPath, containsPathOrParents} from "./parts/paths.js"
 
-import type {StateTree, Read, Subscription, TrackingSession, Snapstate} from "./types.js"
+import type {StateTree, Read, Subscription, TrackingSession, Snapstate, RestrictedSnapstate, GetTree} from "./types.js"
 
 export * from "./types.js"
 export * from "./parts/errors.js"
@@ -159,17 +159,25 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 	}
 }
 
-export function substate<xTree extends StateTree, xSubtree extends StateTree>(
-		state: Snapstate<xTree>,
-		grabber: (tree: xTree) => xSubtree,
-	): Snapstate<xSubtree> {
-	const writable = grabber(state.writable)
-	const readable = grabber(<xTree>state.readable)
+export function substate<
+		xTree extends StateTree,
+		xSubtree extends StateTree,
+		xSnap extends RestrictedSnapstate<xTree> | Snapstate<xTree>
+	>(
+		state: xSnap,
+		grabber: (tree: GetTree<xSnap>) => xSubtree,
+	): (
+		xSnap extends Snapstate<xTree>
+			? Snapstate<xSubtree>
+			: RestrictedSnapstate<xSubtree>
+	) {
+
+	const readable = grabber(<GetTree<xSnap>>state.readable)
 	const untrackers = new Set<() => void>()
 	const unsubscribers = new Set<() => void>()
-	return {
-		state: writable,
-		writable,
+
+	const restricted: RestrictedSnapstate<xSubtree> = {
+		state: readable,
 		readable,
 		readonly: <Read<xSubtree>>readable,
 		subscribe(subscription) {
@@ -178,7 +186,7 @@ export function substate<xTree extends StateTree, xSubtree extends StateTree>(
 			// *below* properties accessed by the grabber,
 			// which is functionally equivalent to a constrained subscription.
 			const unsubscribe = state.track(
-				() => grabber(<xTree>state.readable),
+				() => grabber(<GetTree<xSnap>>state.readable),
 				readable => {
 					subscription(readable)
 				},
@@ -203,5 +211,32 @@ export function substate<xTree extends StateTree, xSubtree extends StateTree>(
 			untrackers.clear()
 		},
 		wait: state.wait,
+	}
+
+	if ((<Snapstate<StateTree>>state).writable) {
+		const s = <Snapstate<xTree>>state
+		const writable = grabber(<GetTree<xSnap>>s.writable)
+		return <Snapstate<xSubtree>>{
+			...restricted,
+			writable,
+			state: writable,
+		}
+	}
+	else
+		return <any>restricted
+}
+
+export function restricted<xTree extends StateTree>(
+		snap: Snapstate<xTree>
+	): RestrictedSnapstate<xTree> {
+	return {
+		state: snap.readable,
+		readable: snap.readable,
+		readonly: snap.readonly,
+		subscribe: snap.subscribe,
+		track: snap.track,
+		unsubscribeAll: snap.unsubscribeAll,
+		untrackAll: snap.untrackAll,
+		wait: snap.wait,
 	}
 }
