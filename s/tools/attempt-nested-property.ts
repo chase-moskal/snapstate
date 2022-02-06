@@ -1,11 +1,9 @@
 
 /**
  * insert a value into an object tree.
- *  - add missing objects to the tree, according to the path.
- *  - replace any non-object properties with objects along the way.
- *  - sets the property value, onto the deepest object.
+ *  - throws an error if there's a non-object in the way.
  */
-export function forceNestedProperty(
+export function attemptNestedProperty(
 		object: {[key: string]: any},
 		path: string[],
 		value: any,
@@ -18,9 +16,9 @@ export function forceNestedProperty(
 			currentSubObject = currentSubObject[key]
 		}
 		else {
-			currentSubObject[key] = {}
-			currentSubObject = currentSubObject[key]
+			throw new Error("unable to write property to object tree containing undefined")
 		}
 	}
 	currentSubObject[finalKey] = value
 }
+
