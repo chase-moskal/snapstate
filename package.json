@@ -1,6 +1,6 @@
 {
 	"name": "@chasemoskal/snapstate",
-	"version": "0.0.0-dev.6",
+	"version": "0.0.0",
 	"description": "tiny robust state management",
 	"license": "MIT",
 	"author": "Chase Moskal <chasemoskal@gmail.com>",
