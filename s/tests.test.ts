@@ -288,6 +288,21 @@ export default <Suite>{
 				await state.wait()
 				expect(calls).equals(2)
 			},
+			async "only fire trackers when property actually changes"() {
+				const snap = snapstate({a: 0})
+				let fired = 0
+				snap.track(state => {
+					void state.a
+					fired += 1
+				})
+				expect(fired).equals(1)
+				snap.state.a = 1
+				await snap.wait()
+				expect(fired).equals(2)
+				snap.state.a = 1
+				await snap.wait()
+				expect(fired).equals(2)
+			},
 		},
 		"untrack and unsubscribe all": {
 			async "untrack all stops tracking"() {

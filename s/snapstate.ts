@@ -106,8 +106,12 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 				if (allowWrites) {
 					if (activeTrackThatIsRecording || activeUpdate)
 						throw new SnapstateCircularError("forbidden state circularity")
-					attemptNestedProperty(masterTree, currentPath, unproxy(value, symbolToAllowProxyIntoState))
-					queueUpdate(currentPath)
+					const existingValue = obtain(masterTree, currentPath)
+					const isChanged = value !== existingValue
+					if (isChanged) {
+						attemptNestedProperty(masterTree, currentPath, unproxy(value, symbolToAllowProxyIntoState))
+						queueUpdate(currentPath)
+					}
 					return true
 				}
 				else {
