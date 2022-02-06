@@ -16,7 +16,9 @@
 🔬 typescript-native types, es modules  
 💖 free and open source, just for you  
 
-snapstate is designed to be a modern replacement for mobx. mobx was amazing, but has grown comically large at like 50 KB. snapstate is only a few hundred lines. mobx is also *global,* among other complications that we don't prefer.
+snapstate is designed to be a modern replacement for mobx. mobx was amazing, but has grown comically large at like 50 KB. mobx is also *global,* among other complications that we don't prefer.
+
+snapstate is 1.5 KB, minified and gzipped.
 
 <br/>
 
