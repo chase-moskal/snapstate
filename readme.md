@@ -125,10 +125,10 @@ if every part of our app can write to the state, all willy-nilly, it quickly bec
 
   myFrontendComponents({
 
-    // components only have read-only access to the state.
+    // components only have read-only access to the state
     snap: restricted(snap),
 
-    // components can call our formalized actions to change the state.
+    // components can call our formalized actions to change the state
     actions,
   })
   ```
