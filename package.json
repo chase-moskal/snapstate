@@ -18,9 +18,6 @@
 		"test": "cynic node x/tests.test.js",
 		"test-debug": "node inspect node_modules/cynic/dist/cli.js node x/tests.test.js"
 	},
-	"dependencies": {
-		"mongodb": "^4.3.1"
-	},
 	"devDependencies": {
 		"cynic": "0.1.0-dev.16",
 		"mkdirp": "^1.0.4",
