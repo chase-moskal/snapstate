@@ -1,12 +1,28 @@
 
 import {Suite, expect} from "cynic"
 import {forceNestedProperty} from "./tools/force-nested-property.js"
-import {snapstate, substate, symbolToAllowProxyIntoState} from "./snapstate.js"
+import {obtain, snapstate, substate, symbolToAllowProxyIntoState} from "./snapstate.js"
 
 import debounce from "./tools/debounce/debounce.test.js"
 
 export default <Suite>{
 	debounce,
+	"obtain": {
+		async "obtain can return a property"() {
+			expect(obtain({a: 123}, ["a"])).equals(123)
+		},
+		async "obtain can return a nested property"() {
+			expect(obtain({a: {b: 123}}, ["a", "b"])).equals(123)
+			expect(obtain({a: {b: {c: 123}}}, ["a", "b", "c"])).equals(123)
+			expect(obtain({a: {b: {c: {d: 123}}}}, ["a", "b", "c", "d"])).equals(123)
+		},
+		async "obtain returns undefined for unknown properties"() {
+			expect(obtain({}, ["a"])).equals(undefined)
+			expect(obtain({}, ["a", "b"])).equals(undefined)
+			expect(obtain({}, ["a", "b", "c"])).equals(undefined)
+			expect(obtain({}, ["a", "b", "c", "d"])).equals(undefined)
+		},
+	},
 	"force nested property": {
 		async "plant a property on an object"() {
 			const obj: {[key: string]: boolean} = {}
