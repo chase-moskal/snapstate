@@ -3,7 +3,7 @@ import {obtain} from "./tools/obtain.js"
 import {unproxy} from "./tools/unproxy.js"
 import {debounce} from "./tools/debounce/debounce.js"
 import {isPlainObject} from "./tools/is-plain-object.js"
-import {forceNestedProperty} from "./tools/force-nested-property.js"
+import {attemptNestedProperty} from "./tools/attempt-nested-property.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
 import {containsPathOrChildren, containsPath, containsPathOrParents} from "./parts/paths.js"
 
@@ -13,7 +13,7 @@ export * from "./types.js"
 export * from "./parts/errors.js"
 
 export * from "./tools/debounce/debounce.js"
-export * from "./tools/force-nested-property.js"
+export * from "./tools/attempt-nested-property.js"
 export * from "./tools/is-plain-object.js"
 export * from "./tools/is-void.js"
 export * from "./tools/nap.js"
@@ -94,7 +94,10 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 					}
 				}
 
-				const value = obtain(masterTree, currentPath)
+				// if value from master tree is missing, use the proxy target,
+				// to alleviate proxy rug-pulling scenarios
+				const value = obtain(masterTree, currentPath) ?? obtain(t, [property])
+
 				return isPlainObject(value)
 					? recurse(value, allowWrites, currentPath)
 					: value
@@ -104,7 +107,7 @@ export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree
 				if (allowWrites) {
 					if (activeTrackThatIsRecording || activeUpdate)
 						throw new SnapstateCircularError("forbidden state circularity")
-					forceNestedProperty(masterTree, currentPath, unproxy(value, symbolToAllowProxyIntoState))
+					attemptNestedProperty(masterTree, currentPath, unproxy(value, symbolToAllowProxyIntoState))
 					queueUpdate(currentPath)
 					return true
 				}
