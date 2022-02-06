@@ -139,6 +139,12 @@ export default <Suite>{
 				})
 				expect(state.writable.group.a).equals(2)
 			},
+			async "readable groups are resistance to proxy rug-pulling"() {
+				const state = snapstate({alpha: {bravo: {count: 123}}})
+				const {bravo} = state.readable.alpha
+				state.writable.alpha = undefined
+				expect(bravo.count).equals(123)
+			},
 		},
 		"subscriptions": {
 			async "state property is subscribable"() {
@@ -477,7 +483,7 @@ export default <Suite>{
 				const state = snapstate({a: {b: {count: 0}}})
 				const sub = substate(state, tree => tree.a.b)
 				let lastRootCount = -1
-				state.track(readable => lastRootCount = readable.a.b.count)
+				state.track(readable => lastRootCount = readable.a?.b?.count)
 				expect(sub.readable.count).equals(0)
 				state.writable.a = undefined
 				expect(sub.readable.count === undefined).equals(true)
