@@ -22,6 +22,7 @@ export interface TrackingSession {
 export type Subscription<xTree extends StateTree> = (readable: xTree) => void
 
 export interface Snapstate<xTree extends StateTree> {
+	state: xTree
 	writable: xTree
 	readable: xTree
 	readonly: Read<xTree>

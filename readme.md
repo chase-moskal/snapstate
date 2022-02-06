@@ -22,84 +22,43 @@ snapstate is 1.5 KB, minified and gzipped.
 
 <br/>
 
-## using snapstate
+## 🕵️ tracking changes to properties
 
-<br/>
-
-### 💾 `readable` and `writable`
-
-- the first cool thing about snapstate, is that it separates the `readable` and `writable` access to your state. you'll soon learn why that's rad.
-- let's create some state.
+- first, let's create some state.
   ```js
   import {snapstate} from "@chasemoskal/snapstate"
 
-  const state = snapstate({
+  const snap = snapstate({
     count: 0,
     coolmode: "enabled",
+    also: {
+      nesting: {
+        isAllowed: true,
+      },
+    },
   })
   ```
-- we can read the state's properties via `readable`.
+- `snap.track` allows us to track changes to the state
   ```js
-  console.log(state.readable.count)
-   // 0
-  ```
-- but, importantly, `readable` won't let us write properties.
-  ```js
-  state.readable.count += 1
-   // SnapstateReadonlyError -- no way, bucko!
-  ```
-- instead, we write properties via `writable`.
-  ```js
-  state.writable.count += 1
-   // this is allowed
-
-  console.log(state.readable.count)
-   // 1
-  ```
-- this separation is great, because we can pass `readable` to parts of our application that should not be allowed to change the state. this is how we control access.
-- this makes it easy to formalize *actions.* it's as easy as giving our action functions access to the `writable` state.
-  ```js
-  function myIncrementAction() {
-    state.writable.count += 1
-  }
-  ```
-- then we might give our frontend components the `state.readable`, and `state.track` functions.
-- this makes it easy to achieve a clean uni-directional dataflow for our application's state.
-- `writable` is, itself, also readable.
-  ```js
-  console.log(state.writable.count)
-   // 1
-  ```
-
-<br/>
-
-### 🕵️ tracking changes
-
-- we can track changes to the properties we care about.
-  ```js
-  const state = snapstate({count: 0, coolmode: "enabled"})
-
-  state.track(() => {
-    console.log(`count changed: ${state.readable.count}`)
-      //                                         ☝️
-      //               snapstate detects this property read,
-      //               and will run this tracker function
-      //               whenever the property changes.
+  snap.track(state => {
+    console.log(state.count)
+     //               ☝️
+     // snapstate detects this property read,
+     // and will run our track callback
+     // whenever this property changes
   })
-   // 0 -- runs once initially
+   // 0 —— runs once initially
 
-  state.writable.count += 1
-   // 1 -- automatically runs the relevant tracker functions
+  snap.state.count += 1
+   // 1 —— automatically runs the relevant tracker functions
 
-  state.writable.coolmode = "disabled"
-   // ~ nothing is logged to console ~
-   // our track callback doesn't care about this property
+  snap.state.coolmode = "disabled"
+   // *nothing happens*
+   // our track callback doesn't care about this property :)
   ```
-- we can be more pedantic, with a custom tracker, to avoid the initial run.
+- if you prefer driving stick-shift, we can make a manual track and even avoid the initial run.
   ```js
-  const state = snapstate({count: 0, coolmode: "enabled"})
-
-  state.track(
+  snap.track(
 
     // observer: listen specifically to "count"
     ({count}) => ({count}),
@@ -108,55 +67,78 @@ snapstate is 1.5 KB, minified and gzipped.
     ({count}) => console.log(`count changed: ${count}`),
   )
 
-  state.writable.count += 1
+  snap.state.count += 1
    // 1
   ```
-- we can also stop tracking things when we want.
+- of course, we can stop tracking things when we want.
   ```js
-  const state = snapstate({count: 0, coolmode: "enabled"})
-  const untrack = state.track(() => console.log(count))
+  const untrack = snap.track(({count}) => console.log(count))
+   // 0
 
-  state.writable.count += 1
+  snap.state.count += 1
    // 1
 
   untrack()
-  state.writable.count += 1
+  snap.state.count += 1
    // *nothing happens*
   ```
 
 <br/>
 
-### 🐣 nesting? *no problem!*
+## 💾 control which parts of your app can write to state
 
-- we can nest our state to arbitrary depth.
+this is a pillar of good state management.
+
+if every part of our app can write to the state, all willy-nilly, it quickly becomes a convoluted mess that is hard to debug.
+
+- `snap.readable` is just like `snap.state`, except that it's read-only.
   ```js
-  const state = snapstate({
-    group1: {
-      group2: {
-        data: "hello!",
-      },
+  const snap = snapstate({count: 0})
+
+  snap.state.count += 1
+   // this is allowed
+
+  snap.readable.count += 1
+   // SnapstateReadonlyError —— no way, bucko!
+  ```
+- we can pass `readable` around to the parts of our application that should only have read-access to the state.
+- it's easy to formalize actions with snapstate.
+  ```js
+  const snap = snapstate({count: 0})
+
+  const actions = {
+    increment() {
+      snap.state.count += 1
     },
+  }
+
+  myFrontendComponents({
+
+    // components should have readable access to the state
+    state: snap.readable,
+
+    // components should have the ability to track state changes
+    track: snap.track,
+
+    // components can call our formalized actions to change the state.
+    actions,
   })
   ```
-- we can track changes to properties, or groups.
-  ```js
-  state.track(readable => console.log(readable.group1.group2.hello))
-  state.track(readable => console.log(readable.group1))
-  ```
+- `snap.state` and `snap.writable` are aliases for each other.
 
 <br/>
 
-### 👁️ subscribe to *any* change in the whole state
+## 👁️ subscribe to *any* change in the whole state tree
 
-- your subscriptions will execute whenever any state is changed.
+- subscriptions will execute whenever any state is changed in the tree.
   ```js
-  state.subscribe(readable => {
+  snap.subscribe(state => {
     console.log("something has changed")
   })
   ```
 - of course you can unsubscribe, too.
   ```js
-  const unsubscribe = state.subscribe(readable => {
+  const unsubscribe = snap.subscribe(state => {
     console.log("something has changed")
   })
 
@@ -165,132 +147,151 @@ snapstate is 1.5 KB, minified and gzipped.
 
 <br/>
 
-### ✋ untrack and unsubscribe all
+## ✋ untrack and unsubscribe all
 
-- stop all tracking
+- delete all trackers
   ```js
-  state.untrackAll()
+  snap.untrackAll()
   ```
-- stop all subscribers
+- delete all subscriptions
   ```js
-  state.unsubscribeAll()
+  snap.unsubscribeAll()
   ```
 
 <br/>
 
-### ⛹️ debouncing and waiting
+## ⛹️ debouncing and waiting
 
-- the updates that respond to changing state, is debounced.  
-  this prevents consecutive updates from firing more updates than necessary.  
-  because of this, you may have to `wait` before seeing the effects of your update.
+- tracking and subscription callbacks are debounced.  
+  this prevents consecutive changes from firing more callbacks than necessary.
   ```js
-  const state = snapstate({count: 0})
+  const snap = snapstate({count: 0})
+  snap.track(({count}) => console.log(count))
+  snap.state.count += 1
+  snap.state.count += 1
+  snap.state.count += 1
+   // 1 —— only runs once
+  ```
+- but be advised — this might mean you have to wait before seeing the effects of your callbacks
+  ```js
+  const snap = snapstate({count: 0})
 
   let called = false
-  state.track(() => {
-    called = true
-  })
+  snap.subscribe(() => called = true)
 
-  state.writable.count += 1
+  snap.state.count += 1
   console.log(called)
-   // false -- what the heck!?
+   // false —— *what the heck!?*
 
-  await state.wait()
-  console.log(called)
-   // true -- oh, okay -- i just had to wait for the debouncer!
+  await snap.wait()
+   // true —— oh! i just had to wait, for the debouncer!
   ```
 
 <br/>
 
-### ♻️ circular-safety
+## ♻️ circular-safety
 
 - you are prevented from writing to state while reacting to it.
-- you can't make circles with track observers:
   ```js
-  state.track(() => {
-    state.writable.count += 1
+  const snap = snapstate({count: 0})
+
+  snap.track(state => {
+    state.count += 1
+     // SnapstateReadonlyError —— not a chance, buster!
+
+     // "state" is actually "snap.readable" in this context,
+     // (same with subscribe)
   })
-   // SnapstateCircularError -- no way, bucko!
-- you can't make circles with track reactions:
+  ```
+- you might think you're clever, and could outsmart snapstate. *you'd be wrong!*
   ```js
-  state.track(
+  snap.track(({count}) => {
+    // here's you being clever, thinking you can access the *outer* snap.state
+    snap.state.count += 1
+     // SnapstateCircularError —— dead in your tracks!
+  })
+  ```
+- as we've established, you can't make circular references in `track` callbacks.
+- you also can't make circles with track reactions.
+  ```js
+  snap.track(
     ({count}) => ({count}),
     () => {
-      state.writable.count += 1
+      snap.state.count += 1
     },
   )
-  state.writable.count += 1
+  snap.state.count += 1
   await state.wait()
-   // SnapstateCircularError -- thwarted again, buddy!
+   // SnapstateCircularError —— thwarted again, buddy!
   ```
-- and you can't make circles with subscriptions:
+- and you can't make circles in subscriptions, either.
   ```js
-  state.subscribe(() => state.writable.count += 1)
-  state.writable.count += 1
+  snap.subscribe(() => snap.state.count += 1)
+  snap.state.count += 1
   await state.wait()
-   // SnapstateCircularError -- try again, pal!
+   // SnapstateCircularError —— just give up
   ```
-- you can catch these async errors on `state.wait()`.
+- you can catch these async errors on the `state.wait()` promise.
 
 <br/>
 
-### ✂️ substate: carve your state into subsections
+## ✂️ substate: carve your state into subsections
 
 - it's awkward to pass your whole application state to every little part of your app.
 - so you can snip off chunks, to pass along to the components that need it.
   ```js
   import {snapstate, substate} from "@chasemoskal/snapstate"
 
-  const state = snapstate({
+  const snap = snapstate({
     outerCount: 1,
     coolgroup: {
       innerCount: 2,
     }
   })
 
-  const coolgroup = substate(state, tree => tree.coolgroup)
+  const coolgroup = substate(snap, tree => tree.coolgroup)
 
   // note: coolgroup has no access to "outerCount"
-  console.log(coolgroup.readable.innerCount)
+  console.log(coolgroup.state.innerCount)
    // 2
 
-  coolgroup.track(readable => console.log(readable.innerCount))
-  coolgroup.writable.innerCount += 1
+  coolgroup.track(state => console.log(state.innerCount))
+  coolgroup.state.innerCount += 1
   await coolgroup.wait()
    // 3
   ```
-  - a substate's `subscribe` function only listens to its subsection of the state.
-  - a substate's `untrackAll` function only applies to tracking called on the subsection.
-  - a substate's `unsubscribeAll` function only applies to subscriptions called on the subsection.
+- a substate's `subscribe` function only listens to its subsection of the state.
+- a substate's `untrackAll` function only applies to tracking called on the subsection.
+- a substate's `unsubscribeAll` function only applies to subscriptions called on the subsection.
 
 <br/>
 
-### 👨‍⚖️ strict readonly
+## 👨‍⚖️ super-strict typescript readonly
 
-- introducing `state.readonly`. it's `readable`'s strict and demanding mother-in-law.
-- `readonly` literally *is* readable, but with more strict typescript typing.
-- you see, typescript is *extremely strict* about its `readonly` properties.  
-  so much so, that it's very painful to use `readonly` structures throughout your app.
-- for this reason, snapstate provides `state.readable` by default, which will throw errors at runtime if you're being naughty and attempting to write properties there -- but the typescript compiler doesn't complain.
-- if your shirt is tucked-in, `state.readonly` will produce compile-time typescript errors for you.
-- anywhere you find a `readable` (for example in track and subscribe callbacks), you could set its type to `Read<typeof readable>` to make typescript strict about it.
+- introducing `snap.readonly`. it's `snap.readable`'s strict and demanding mother-in-law.
+- `readonly` literally *is* `readable`, but with more strict typescript typing.
+- you see, typescript is *extremely strict* about its typescript "readonly" properties.  
+  so much so, that it's very painful to use typescript "readonly" structures throughout your app.
+- for this reason, snapstate provides `snap.readable` by default, which will throw errors only at runtime when you're being naughty attempting to write properties there — but the typescript compiler doesn't complain with `readable`.
+- if your shirt is fully tucked-in, you can use `snap.readonly` to produce compile-time typescript errors.
+- anywhere you find a `readable` (for example in track and subscribe callbacks), you could set its type to `Read<typeof readable>` to make typescript super strict about it.
 
 <br/>
 
 ### 📜 beware of arrays, maps, and other fancy objects
 
-- snapstate only tracks when properties are written.
-- what this means, is that methods like `array.push` aren't visible to snapstate:
+- snapstate only tracks changes when properties are set.
+- what this means, is that methods like `array.push` aren't visible to snapstate.
   ```js
-  const state = snapstate({myArray: []})
+  const snap = snapstate({myArray: []})
 
   // bad -- updates will not respond.
-  state.writable.myArray.push("hello")
+  snap.state.myArray.push("hello")
   ```
 - to update an array, we must wholly replace it:
   ```js
   // good -- updates will respond.
-  state.writable.myArray = [...state.writable.myArray, "hello"]
+  snap.state.myArray = [...snap.state.myArray, "hello"]
   ```
 - this is an entirely survivable state of affairs, but we may eventually do the work to implement special handling for arrays, maps, sets, and other common objects. *(contributions welcome!)*
 
@@ -298,15 +299,15 @@ snapstate is 1.5 KB, minified and gzipped.
 
 ### 🧬 using proxies in your state, if you must
 
-- snapstate doesn't like proxies in the state, so it makes object copies of them on-sight.
-- this is to prevent circularity issues, since snapstate's readables are proxies.
-- if you'd like to specifically allow a proxy, you can convince snapstate to allow it into the state, by having your proxy return `true` when `symbolToAllowProxyIntoState` is accessed.
+- snapstate doesn't like proxies in the state, so it destroys them on-sight (by making object copies).
+- this is to prevent circularity issues, since snapstate's readables are made of proxies.
+- if you'd like to *specifically allow* a particular proxy, you can convince snapstate to allow it into the state tree, by having your proxy return `true` when `symbolToAllowProxyIntoState` is accessed.
 - snapstate will check for this symbol whenever it ingests objects into the state.
 - here's an example:
   ```js
   import {snapstate, symbolToAllowProxyIntoState} from "@chasemoskal/snapstate"
 
-  const state = snapstate({
+  const snap = snapstate({
     proxy: new Proxy({}, {
       get(t, property) {
         if (property === symbolToAllowProxyIntoState)
@@ -317,7 +318,7 @@ snapstate is 1.5 KB, minified and gzipped.
     })
   })
 
-  console.log(state.readable.proxy.hello)
+  console.log(snap.state.proxy.hello)
    // "world!"
   ```
 
