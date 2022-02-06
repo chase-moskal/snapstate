@@ -52,7 +52,7 @@ snapstate is 1.5 KB, minified and gzipped.
   snap.state.count += 1
    // 1 —— automatically runs the relevant tracker functions
 
-  snap.state.coolmode = "disabled"
+  snap.state.coolmode = "super"
    // *nothing happens*
    // our track callback doesn't care about this property :)
   ```
