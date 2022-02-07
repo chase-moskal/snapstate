@@ -229,17 +229,17 @@ if every part of our app can write to the state, all willy-nilly, it quickly bec
     },
   )
   snap.state.count += 1
-  await state.wait()
+  await snap.wait()
    // SnapstateCircularError —— thwarted again, buddy!
   ```
 - and you can't make circles in subscriptions, either.
   ```js
   snap.subscribe(() => snap.state.count += 1)
   snap.state.count += 1
-  await state.wait()
+  await snap.wait()
    // SnapstateCircularError —— just give up
   ```
-- you can catch these async errors on the `state.wait()` promise.
+- you can catch these async errors on the `snap.wait()` promise.
 
 <br/>
 
