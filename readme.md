@@ -292,7 +292,7 @@ if every part of our app can write to the state, all willy-nilly, it quickly bec
 
 <br/>
 
-### 📜 beware of arrays, maps, and other fancy objects
+## 📜 beware of arrays, maps, and other fancy objects
 
 - snapstate only tracks changes when properties are set on plain objects.
 - what this means, is that methods like `array.push` aren't visible to snapstate.
@@ -318,7 +318,7 @@ if every part of our app can write to the state, all willy-nilly, it quickly bec
 
 <br/>
 
-### 🧬 using proxies in your state, if you must
+## 🧬 using proxies in your state, if you must
 
 - snapstate doesn't like proxies in the state, so it destroys them on-sight (by making object copies).
 - this is to prevent circularity issues, since snapstate's readables are made of proxies.
