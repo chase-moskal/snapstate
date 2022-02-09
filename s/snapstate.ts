@@ -5,12 +5,15 @@ import {debounce} from "./tools/debounce/debounce.js"
 import {isPlainObject} from "./tools/is-plain-object.js"
 import {attemptNestedProperty} from "./tools/attempt-nested-property.js"
 import {SnapstateCircularError, SnapstateReadonlyError} from "./parts/errors.js"
+import {symbolToAllowProxyIntoState} from "./parts/symbol-to-allow-proxy-into-state.js"
 import {containsPathOrChildren, containsPath, containsPathOrParents} from "./parts/paths.js"
 
 import type {StateTree, Read, Subscription, TrackingSession, Snapstate, RestrictedSnapstate, GetTree} from "./types.js"
 
 export * from "./types.js"
+export * from "./parts/paths.js"
 export * from "./parts/errors.js"
+export * from "./parts/symbol-to-allow-proxy-into-state.js"
 
 export * from "./tools/debounce/debounce.js"
 export * from "./tools/attempt-nested-property.js"
@@ -20,8 +23,6 @@ export * from "./tools/nap.js"
 export * from "./tools/object-map.js"
 export * from "./tools/obtain.js"
 export * from "./tools/unproxy.js"
-
-export const symbolToAllowProxyIntoState = Symbol("symbolToAllowProxyIntoState")
 
 export function snapstate<xTree extends StateTree>(tree: xTree): Snapstate<xTree> {
 	const masterTree = unproxy(tree, symbolToAllowProxyIntoState)
