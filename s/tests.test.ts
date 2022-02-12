@@ -150,7 +150,7 @@ export default <Suite>{
 				})
 				expect(state.writable.group.a).equals(2)
 			},
-			async "readable groups are resistance to proxy rug-pulling"() {
+			async "proxy rug-pulling resistance when parents become undefined"() {
 				const state = snapstate({alpha: {bravo: {count: 123}}})
 				const {bravo} = state.readable.alpha
 				state.writable.alpha = undefined
