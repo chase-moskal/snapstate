@@ -156,6 +156,12 @@ export default <Suite>{
 				state.writable.alpha = undefined
 				expect(bravo.count).equals(123)
 			},
+			async "proxy rug-pulling resistance when parents are rewritten"() {
+				const state = snapstate({alpha: {bravo: {count: 123}}})
+				const {bravo} = state.readable.alpha
+				state.writable.alpha = {bravo: {count: 999}}
+				expect(bravo.count).equals(123)
+			},
 		},
 		"subscriptions": {
 			async "state property is subscribable"() {
